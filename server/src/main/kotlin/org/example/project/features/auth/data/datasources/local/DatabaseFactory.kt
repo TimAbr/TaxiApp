@@ -7,7 +7,10 @@ import org.jetbrains.exposed.sql.SchemaUtils
 import org.jetbrains.exposed.sql.transactions.transaction
 
 object DatabaseFactory {
-    fun init(driver: String, url: String) {
+    fun init(
+        driver: String,
+        url: String,
+    ) {
         val database = Database.connect(url, driver)
 
         transaction(database) {

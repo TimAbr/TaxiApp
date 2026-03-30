@@ -1,6 +1,5 @@
 package org.example.project
 
-
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
 import io.ktor.http.HttpStatusCode
@@ -29,28 +28,16 @@ import org.example.project.features.auth.data.repository.TokenRepositoryImpl
 import org.example.project.features.auth.domain.service.AuthService
 import org.example.project.features.auth.domain.service.JwtTokenManager
 import org.example.project.features.auth.domain.service.TokenManager
+import org.example.project.utils.config.toAppConfig
 
 const val AUTH_CONFIG_NAME = "auth-jwt"
-
-object Config {
-    const val DB_DRIVER = "storage.driverClassName"
-    const val DB_URL = "storage.jdbcURL"
-    const val JWT_SECRET = "jwt.secret"
-    const val JWT_REALM = "jwt.realm"
-    const val GOOGLE_CLIENT_ID = "google.clientId"
-}
 
 fun main(args: Array<String>): Unit = EngineMain.main(args)
 
 fun Application.module() {
-    val jdbcDriver = environment.config.property(Config.DB_DRIVER).getString()
-    val jdbcUrl = environment.config.property(Config.DB_URL).getString()
-    
-    DatabaseFactory.init(jdbcDriver, jdbcUrl)
+    val appConfig = environment.config.toAppConfig()
 
-    val jwtSecret = environment.config.property(Config.JWT_SECRET).getString()
-    val jwtRealm = environment.config.property(Config.JWT_REALM).getString()
-    val googleClientId = environment.config.property(Config.GOOGLE_CLIENT_ID).getString()
+    DatabaseFactory.init(appConfig.storage.driver, appConfig.storage.url)
 
     install(ContentNegotiation) {
         json(Json {
@@ -62,27 +49,27 @@ fun Application.module() {
 
     val userLocalDataSource = UserLocalDataSource()
     val tokenLocalDataSource = TokenLocalDataSource()
-    
+
     val userRepository = UserRepositoryImpl(userLocalDataSource)
     val tokenRepository = TokenRepositoryImpl(tokenLocalDataSource)
-    
-    val tokenManager = JwtTokenManager(jwtSecret)
-    
-    val externalAuthService = GoogleAuthService(googleClientId)
+
+    val tokenManager = JwtTokenManager(appConfig.jwt.secret, appConfig.jwt.tokenManagerConfig)
+
+    val externalAuthService = GoogleAuthService(appConfig.google.clientId)
     val authService = AuthService(
         userRepository = userRepository,
         tokenRepository = tokenRepository,
         externalAuthService = externalAuthService,
-        tokenManager = tokenManager
+        tokenManager = tokenManager,
     )
 
     install(Authentication) {
         jwt(AUTH_CONFIG_NAME) {
-            realm = jwtRealm
+            realm = appConfig.jwt.realm
             verifier(
                 JWT
-                    .require(Algorithm.HMAC256(jwtSecret))
-                    .build()
+                    .require(Algorithm.HMAC256(appConfig.jwt.secret))
+                    .build(),
             )
             validate { credential ->
                 if (credential.payload.getClaim(TokenManager.CLAIM_USER_ID).asInt() != null) {
@@ -92,8 +79,9 @@ fun Application.module() {
                 }
             }
             challenge { _, _ ->
-                call.respond(HttpStatusCode.Unauthorized,
-                    "Token is not valid or has expired"
+                call.respond(
+                    HttpStatusCode.Unauthorized,
+                    "Token is not valid or has expired",
                 )
             }
         }
@@ -103,7 +91,7 @@ fun Application.module() {
         get("/") {
             call.respondText("Ktor: ${Greeting().greet()}")
         }
-        
+
         authRoutes(authService)
 
         authenticate(AUTH_CONFIG_NAME) {
