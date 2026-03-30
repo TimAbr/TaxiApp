@@ -25,9 +25,13 @@ class GoogleAuthService(
             val token = verifier.verify(idToken)
             if (token != null) {
                 val payload = token.payload
+                val email = payload.email ?: return Outcome.Error(
+                    ExternalAuthError.INVALID_TOKEN,
+                    "Google ID Token does not contain an email",
+                )
                 Outcome.Success(
                     ExternalUserInfo(
-                        email = payload.email,
+                        email = email,
                         name = (payload[FIELD_NAME] as? String) ?: payload.email,
                     ),
                 )
