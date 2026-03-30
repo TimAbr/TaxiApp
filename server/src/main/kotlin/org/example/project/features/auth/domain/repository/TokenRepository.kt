@@ -24,4 +24,8 @@ interface TokenRepository {
     suspend fun revokeRefreshToken(
         refreshToken: String,
     ): Outcome<Unit, TokenRepositoryError>
+
+    suspend fun consumeRefreshToken(
+        refreshToken: String,
+    ): Outcome<Int, TokenRepositoryError>
 }

@@ -18,4 +18,8 @@ interface TokenDataSource {
     fun delete(
         tokenValue: String,
     ): Outcome<Unit, TokenRepositoryError>
+
+    fun consume(
+        tokenValue: String,
+    ): Outcome<RefreshTokenEntity, TokenRepositoryError>
 }

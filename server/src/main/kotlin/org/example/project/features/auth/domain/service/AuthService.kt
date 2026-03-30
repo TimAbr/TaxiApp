@@ -45,7 +45,7 @@ class AuthService(
         refreshToken: String,
     ): Outcome<AuthTokenPair, AuthError> {
         return when (
-            val userIdResult = tokenRepository.validateAndGetUserId(refreshToken)
+            val userIdResult = tokenRepository.consumeRefreshToken(refreshToken)
         ) {
             is Outcome.Error -> {
                 Outcome.Error(
@@ -55,17 +55,7 @@ class AuthService(
             }
 
             is Outcome.Success -> {
-                val userId = userIdResult.value
-                when (
-                    val revokeResult = tokenRepository.revokeRefreshToken(refreshToken)
-                ) {
-                    is Outcome.Success -> generateTokensForUser(userId)
-                    is Outcome.Error ->
-                        Outcome.Error(
-                            revokeResult.code.toAuthError(),
-                            revokeResult.message,
-                        )
-                }
+                generateTokensForUser(userIdResult.value)
             }
         }
     }

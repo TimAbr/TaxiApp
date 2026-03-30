@@ -85,6 +85,33 @@ class TokenLocalDataSource : TokenDataSource {
         Outcome.Error(TokenRepositoryError.DATABASE_ERROR, e.message)
     }
 
+    override fun consume(
+        tokenValue: String,
+    ): Outcome<RefreshTokenEntity, TokenRepositoryError> = try {
+        transaction {
+            val entity = RefreshTokensTable.selectAll()
+                .where { RefreshTokensTable.tokenValue eq tokenValue }
+                .singleOrNull()
+                ?.let {
+                    RefreshTokenEntity(
+                        it[RefreshTokensTable.id].value,
+                        it[RefreshTokensTable.userId].value,
+                        it[RefreshTokensTable.tokenValue],
+                        it[RefreshTokensTable.expiresAt],
+                    )
+                }
+
+            if (entity != null) {
+                RefreshTokensTable.deleteWhere { RefreshTokensTable.tokenValue eq tokenValue }
+                Outcome.Success(entity)
+            } else {
+                Outcome.Error(TokenRepositoryError.TOKEN_NOT_FOUND)
+            }
+        }
+    } catch (e: Exception) {
+        Outcome.Error(TokenRepositoryError.DATABASE_ERROR, e.message)
+    }
+
     companion object {
         private const val SQL_STATE_FOREIGN_KEY_VIOLATION = "23506"
     }

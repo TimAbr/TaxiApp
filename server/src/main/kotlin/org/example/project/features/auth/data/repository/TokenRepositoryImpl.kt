@@ -2,6 +2,7 @@ package org.example.project.features.auth.data.repository
 
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
+import org.example.project.features.auth.data.datasources.local.tokens.RefreshTokenEntity
 import org.example.project.features.auth.data.datasources.local.tokens.TokenDataSource
 import org.example.project.features.auth.domain.repository.TokenRepository
 import org.example.project.features.auth.domain.repository.TokenRepositoryError
@@ -31,21 +32,33 @@ class TokenRepositoryImpl(
     override suspend fun validateAndGetUserId(
         refreshToken: String,
     ): Outcome<Int, TokenRepositoryError> {
-        val result = tokenDataSource.findByTokenValue(refreshToken)
-        if (result is Outcome.Error) return result
-
-        val tokenEntity = (result as Outcome.Success).value
-        val now = Clock.System.now()
-        if (tokenEntity.expiresAt < now) {
-            return Outcome.Error(TokenRepositoryError.TOKEN_EXPIRED)
+        return when (val result = tokenDataSource.findByTokenValue(refreshToken)) {
+            is Outcome.Error -> result
+            is Outcome.Success -> result.value.getUserIdIfValid()
         }
-
-        return Outcome.Success(tokenEntity.userId)
     }
 
     override suspend fun revokeRefreshToken(
         refreshToken: String,
     ): Outcome<Unit, TokenRepositoryError> {
         return tokenDataSource.delete(refreshToken)
+    }
+
+    override suspend fun consumeRefreshToken(
+        refreshToken: String,
+    ): Outcome<Int, TokenRepositoryError> {
+        return when (val result = tokenDataSource.consume(refreshToken)) {
+            is Outcome.Error -> result
+            is Outcome.Success -> result.value.getUserIdIfValid()
+        }
+    }
+
+    private fun RefreshTokenEntity.getUserIdIfValid(): Outcome<Int, TokenRepositoryError> {
+        val now = Clock.System.now()
+        return if (expiresAt < now) {
+            Outcome.Error(TokenRepositoryError.TOKEN_EXPIRED)
+        } else {
+            Outcome.Success(userId)
+        }
     }
 }
