@@ -1,21 +1,19 @@
 package org.example.project.data.feature.auth.datasources.tokens.local
 
 import com.russhwolf.settings.Settings
-import org.example.project.data.feature.auth.models.AccessTokenDbo
-import org.example.project.data.feature.auth.models.RefreshTokenDbo
+import org.example.project.data.feature.auth.models.AccessToken
+import org.example.project.data.feature.auth.models.RefreshToken
 
 interface TokensDataSource {
-    fun saveTokens(accessToken: AccessTokenDbo, refreshToken: RefreshTokenDbo)
+    fun saveTokens(accessToken: AccessToken, refreshToken: RefreshToken)
 
-    fun updateAccessToken(accessToken: AccessTokenDbo)
-    fun updateRefreshToken(refreshToken: RefreshTokenDbo)
+    fun updateAccessToken(accessToken: AccessToken)
+    fun updateRefreshToken(refreshToken: RefreshToken)
 
-    fun getAccessToken(): AccessTokenDbo?
-    fun getRefreshToken(): RefreshTokenDbo?
+    fun getAccessToken(): AccessToken?
+    fun getRefreshToken(): RefreshToken?
 
     fun clear()
 }
-
-fun createTokensDataSource(): TokensDataSource = SettingsTokensDataSource(createSettings())
 
 expect fun createSettings(): Settings

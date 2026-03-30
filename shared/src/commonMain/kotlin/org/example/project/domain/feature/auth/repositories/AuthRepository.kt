@@ -1,6 +1,5 @@
 package org.example.project.domain.feature.auth.repositories
 
-import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.StateFlow
 import org.example.project.domain.feature.auth.models.AuthMethod
 import org.example.project.utils.models.Outcome
@@ -12,14 +11,17 @@ interface AuthRepository {
 }
 
 sealed interface AuthLoginError {
-    data object NetworkError : AuthLoginError
-    data object InvalidToken : AuthLoginError
-    data object ServerError : AuthLoginError
-    data object Cancelled : AuthLoginError
-    data object Unknown : AuthLoginError
+    object NetworkError : AuthLoginError
+    object ServerError : AuthLoginError
+    object Unknown : AuthLoginError
+    
+    interface GoogleAuthError : AuthLoginError {
+        object Cancelled : GoogleAuthError
+        object InvalidToken : AuthLoginError
+    }
 }
 
 sealed interface AuthLogoutError {
-    data object NetworkError : AuthLogoutError
-    data object Unknown : AuthLogoutError
+    object NetworkError : AuthLogoutError
+    object Unknown : AuthLogoutError
 }
