@@ -13,10 +13,13 @@ import io.ktor.server.auth.jwt.jwt
 import io.ktor.server.auth.principal
 import io.ktor.server.netty.EngineMain
 import io.ktor.server.plugins.contentnegotiation.ContentNegotiation
+import io.ktor.server.plugins.statuspages.StatusPages
 import io.ktor.server.response.respond
 import io.ktor.server.response.respondText
 import io.ktor.server.routing.get
 import io.ktor.server.routing.routing
+import io.ktor.server.request.ContentTransformationException
+import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.Json
 import org.example.project.features.auth.data.datasources.local.DatabaseFactory
 import org.example.project.features.auth.data.datasources.local.tokens.TokenLocalDataSource
@@ -45,6 +48,16 @@ fun Application.module() {
             isLenient = true
             ignoreUnknownKeys = true
         })
+    }
+
+    install(StatusPages) {
+        exception<Throwable> { call, cause ->
+            if (cause is SerializationException || cause is ContentTransformationException) {
+                call.respond(HttpStatusCode.BadRequest, "Invalid JSON")
+            } else {
+                call.respond(HttpStatusCode.InternalServerError, "Something went wrong")
+            }
+        }
     }
 
     val userLocalDataSource = UserLocalDataSource()

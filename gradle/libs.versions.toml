@@ -58,6 +58,7 @@ javaJwt = { module = "com.auth0:java-jwt", version.ref = "javaJwt" }
 googleApiClient = { module = "com.google.api-client:google-api-client", version.ref = "googleApiClient" }
 kotlinx-datetime = { module = "org.jetbrains.kotlinx:kotlinx-datetime", version.ref = "kotlinxDatetime" }
 exposed-kotlin-datetime = { module = "org.jetbrains.exposed:exposed-kotlin-datetime", version.ref = "exposed" }
+ktor-serverStatusPages = { module = "io.ktor:ktor-server-status-pages", version.ref = "ktor" }
 
 [plugins]
 androidApplication = { id = "com.android.application", version.ref = "agp" }

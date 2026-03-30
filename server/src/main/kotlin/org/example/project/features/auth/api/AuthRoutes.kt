@@ -18,10 +18,7 @@ import org.example.project.utils.models.Outcome
 fun Route.authRoutes(authService: AuthService) {
     route("/auth") {
         post("/google") {
-            val req = try { call.receive<GoogleAuthRequest>() } catch (e: Exception) {
-                call.respond(HttpStatusCode.BadRequest, "Invalid JSON")
-                return@post
-            }
+            val req = call.receive<GoogleAuthRequest>()
             
             when (val result = authService.authenticateWithGoogle(req.idToken)) {
                 is Outcome.Success -> {
@@ -42,10 +39,7 @@ fun Route.authRoutes(authService: AuthService) {
         }
 
         post("/refresh") {
-            val req = try { call.receive<RefreshRequest>() } catch (e: Exception) {
-                call.respond(HttpStatusCode.BadRequest, "Invalid JSON")
-                return@post
-            }
+            val req = call.receive<RefreshRequest>()
             
             when (val result = authService.refreshTokens(req.refreshToken)) {
                 is Outcome.Success -> {
