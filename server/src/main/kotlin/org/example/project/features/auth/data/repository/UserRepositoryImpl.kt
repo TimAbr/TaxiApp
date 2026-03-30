@@ -7,16 +7,18 @@ import org.example.project.features.auth.domain.repository.UserRepositoryError
 import org.example.project.utils.models.Outcome
 
 class UserRepositoryImpl(
-    private val userDataSource: UserDataSource
+    private val userDataSource: UserDataSource,
 ) : UserRepository {
     override suspend fun findOrCreateUser(
         email: String,
-        name: String
+        name: String,
     ): Outcome<User, UserRepositoryError> {
         return userDataSource.findOrCreate(email, name)
     }
 
-    override suspend fun findUserById(id: Int): Outcome<User, UserRepositoryError> {
+    override suspend fun findUserById(
+        id: Int,
+    ): Outcome<User, UserRepositoryError> {
         return userDataSource.findById(id)
     }
 }

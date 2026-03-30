@@ -10,7 +10,7 @@ import java.util.Date
 import java.util.UUID
 
 class JwtTokenManager(
-    private val jwtSecret: String
+    private val jwtSecret: String,
 ) : TokenManager {
 
     override fun generateAccessToken(userId: Int): String {
@@ -25,6 +25,9 @@ class JwtTokenManager(
     }
 
     override fun getRefreshTokenExpiration(): Instant {
-        return Clock.System.now().plus(TokenManager.REFRESH_TOKEN_EXPIRATION_MS, DateTimeUnit.Companion.MILLISECOND)
+        return Clock.System.now().plus(
+            TokenManager.REFRESH_TOKEN_EXPIRATION_MS,
+            DateTimeUnit.Companion.MILLISECOND,
+        )
     }
 }

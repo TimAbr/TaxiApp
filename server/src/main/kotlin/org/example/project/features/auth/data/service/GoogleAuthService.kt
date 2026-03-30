@@ -10,7 +10,7 @@ import org.example.project.utils.models.Outcome
 import java.util.Collections
 
 class GoogleAuthService(
-    googleClientId: String
+    googleClientId: String,
 ) : ExternalAuthService {
 
     private val verifier = GoogleIdTokenVerifier
@@ -19,7 +19,7 @@ class GoogleAuthService(
         .build()
 
     override suspend fun verifyToken(
-        idToken: String
+        idToken: String,
     ): Outcome<ExternalUserInfo, ExternalAuthError> {
         return try {
             val token = verifier.verify(idToken)
@@ -28,13 +28,13 @@ class GoogleAuthService(
                 Outcome.Success(
                     ExternalUserInfo(
                         email = payload.email,
-                        name = (payload[FIELD_NAME] as? String) ?: payload.email
-                    )
+                        name = (payload[FIELD_NAME] as? String) ?: payload.email,
+                    ),
                 )
             } else {
                 Outcome.Error(
                     ExternalAuthError.INVALID_TOKEN,
-                    "Google ID Token verification failed"
+                    "Google ID Token verification failed",
                 )
             }
         } catch (e: java.io.IOException) {

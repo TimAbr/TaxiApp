@@ -6,9 +6,11 @@ import org.example.project.utils.models.Outcome
 enum class ExternalAuthError {
     INVALID_TOKEN,
     NETWORK_ERROR,
-    UNKNOWN_ERROR
+    UNKNOWN_ERROR,
 }
 
 interface ExternalAuthService {
-    suspend fun verifyToken(idToken: String): Outcome<ExternalUserInfo, ExternalAuthError>
+    suspend fun verifyToken(
+        idToken: String,
+    ): Outcome<ExternalUserInfo, ExternalAuthError>
 }

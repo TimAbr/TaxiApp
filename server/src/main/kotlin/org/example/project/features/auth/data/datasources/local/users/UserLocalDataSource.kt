@@ -6,12 +6,11 @@ import org.example.project.utils.models.Outcome
 import org.jetbrains.exposed.sql.insertAndGetId
 import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.transactions.transaction
-import org.example.project.features.auth.data.datasources.local.users.UserDataSource
 
 class UserLocalDataSource : UserDataSource {
     override fun findOrCreate(
         email: String,
-        name: String
+        name: String,
     ): Outcome<User, UserRepositoryError> = try {
         transaction {
             val user = UsersTable
@@ -22,7 +21,8 @@ class UserLocalDataSource : UserDataSource {
                     User(
                         it[UsersTable.id].value,
                         it[UsersTable.email],
-                        it[UsersTable.name])
+                        it[UsersTable.name],
+                    )
                 } ?: run {
                 val id = UsersTable.insertAndGetId {
                     it[UsersTable.email] = email
@@ -37,7 +37,7 @@ class UserLocalDataSource : UserDataSource {
     }
 
     override fun findById(
-        id: Int
+        id: Int,
     ): Outcome<User, UserRepositoryError> = try {
         transaction {
             val user = UsersTable
@@ -48,7 +48,7 @@ class UserLocalDataSource : UserDataSource {
                     User(
                         it[UsersTable.id].value,
                         it[UsersTable.email],
-                        it[UsersTable.name]
+                        it[UsersTable.name],
                     )
                 }
             if (user != null) {
@@ -56,7 +56,7 @@ class UserLocalDataSource : UserDataSource {
             } else {
                 Outcome.Error(
                     UserRepositoryError.USER_NOT_FOUND,
-                    "User with ID $id not found"
+                    "User with ID $id not found",
                 )
             }
         }
