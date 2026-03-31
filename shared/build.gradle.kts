@@ -1,4 +1,5 @@
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import java.util.Properties
 
 plugins {
     alias(libs.plugins.kotlinMultiplatform)
@@ -32,6 +33,9 @@ kotlin {
         }
         androidMain.dependencies {
             implementation(libs.androidx.security.crypto)
+            implementation(libs.androidx.credentials)
+            implementation(libs.androidx.credentials.play.services.auth)
+            implementation(libs.googleid)
         }
     }
 }
@@ -45,5 +49,19 @@ android {
     }
     defaultConfig {
         minSdk = libs.versions.android.minSdk.get().toInt()
+        
+        val webClientId = if (rootProject.file("local.properties").exists()) {
+            val props = Properties().apply {
+                load(rootProject.file("local.properties").inputStream())
+            }
+            props.getProperty("google.web.client.id.android") ?: ""
+        } else {
+            ""
+        }
+        buildConfigField("String", "GOOGLE_WEB_CLIENT_ID", "\"$webClientId\"")
+    }
+
+    buildFeatures {
+        buildConfig = true
     }
 }
