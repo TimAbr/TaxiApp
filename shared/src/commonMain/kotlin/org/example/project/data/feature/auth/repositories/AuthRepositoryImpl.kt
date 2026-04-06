@@ -19,7 +19,7 @@ import org.example.project.utils.models.Outcome
 class AuthRepositoryImpl(
     private val googleIdProvider: GoogleIdProvider,
     private val remoteDataSource: AuthRemoteDataSource,
-    private val tokenRepository: TokenRepository
+    private val tokenRepository: TokenRepository,
 ) : AuthRepository {
     
     private val _isAuthorized = MutableStateFlow(tokenRepository.getAccessToken() != null)
@@ -37,21 +37,22 @@ class AuthRepositoryImpl(
         if (googleResult is Outcome.Error) {
             return Outcome.Error(
                 code = googleResult.code,
-                message = googleResult.message
+                message = googleResult.message,
             )
         }
 
         val idToken = (googleResult as Outcome.Success).value
-        return when (val remoteResult = remoteDataSource
+        val remoteResult = remoteDataSource
             .authenticateWithGoogle(GoogleAuthRequestDto(idToken))
-        ) {
+        
+        return when (remoteResult) {
             is Outcome.Success -> {
                 val tokens = remoteResult.value
                 tokenRepository.saveTokens(
                     TokenPair(
                         accessToken = AccessToken(tokens.accessToken.value),
-                        refreshToken = RefreshToken(tokens.refreshToken.value)
-                    )
+                        refreshToken = RefreshToken(tokens.refreshToken.value),
+                    ),
                 )
                 _isAuthorized.value = true
                 Outcome.Success(Unit)
@@ -59,7 +60,7 @@ class AuthRepositoryImpl(
             is Outcome.Error -> {
                 Outcome.Error(
                     code = remoteResult.code,
-                    message = remoteResult.message
+                    message = remoteResult.message,
                 )
             }
         }

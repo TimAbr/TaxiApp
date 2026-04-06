@@ -7,5 +7,5 @@ import org.example.project.data.feature.auth.models.RefreshToken
 @Serializable
 data class TokenResponseDto(
     val accessToken: AccessToken, 
-    val refreshToken: RefreshToken
+    val refreshToken: RefreshToken,
 )

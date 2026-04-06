@@ -5,11 +5,10 @@ import io.ktor.client.call.body
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
 import io.ktor.http.ContentType
-import io.ktor.http.HttpStatusCode
 import io.ktor.http.contentType
 import io.ktor.http.isSuccess
-import kotlinx.io.IOException
 import org.example.project.BASE_URL
+import org.example.project.data.feature.auth.mappers.toAuthLoginError
 import org.example.project.data.feature.auth.models.remote.request.GoogleAuthRequestDto
 import org.example.project.data.feature.auth.models.remote.request.RefreshRequestDto
 import org.example.project.data.feature.auth.models.remote.response.TokenResponseDto
@@ -17,7 +16,7 @@ import org.example.project.domain.feature.auth.repositories.AuthLoginError
 import org.example.project.utils.models.Outcome
 
 class AuthRemoteDataSourceImpl(
-    private val httpClient: HttpClient
+    private val httpClient: HttpClient,
 ) : AuthRemoteDataSource {
 
     override suspend fun authenticateWithGoogle(request: GoogleAuthRequestDto): Outcome<TokenResponseDto, AuthLoginError> {
@@ -30,19 +29,11 @@ class AuthRemoteDataSourceImpl(
             if (response.status.isSuccess()) {
                 Outcome.Success(response.body<TokenResponseDto>())
             } else {
-                val error = when (response.status) {
-                    HttpStatusCode.Unauthorized -> AuthLoginError.GoogleAuthError.InvalidToken
-                    HttpStatusCode.InternalServerError -> AuthLoginError.ServerError
-                    else -> AuthLoginError.Unknown
-                }
-                Outcome.Error(error)
+                Outcome.Error(response.status.toAuthLoginError())
             }
         }
-        catch (e: IOException){
-            Outcome.Error(AuthLoginError.NetworkError)
-        }
         catch (e: Exception) {
-            Outcome.Error(AuthLoginError.Unknown)
+            Outcome.Error(e.toAuthLoginError())
         }
     }
 
@@ -56,19 +47,11 @@ class AuthRemoteDataSourceImpl(
             if (response.status.isSuccess()) {
                 Outcome.Success(response.body<TokenResponseDto>())
             } else {
-                val error = when (response.status) {
-                    HttpStatusCode.Unauthorized -> AuthLoginError.GoogleAuthError.InvalidToken
-                    HttpStatusCode.InternalServerError -> AuthLoginError.ServerError
-                    else -> AuthLoginError.Unknown
-                }
-                Outcome.Error(error)
+                Outcome.Error(response.status.toAuthLoginError())
             }
         }
-        catch (e: IOException){
-            Outcome.Error(AuthLoginError.NetworkError)
-        }
         catch (e: Exception) {
-            Outcome.Error(AuthLoginError.Unknown)
+            Outcome.Error(e.toAuthLoginError())
         }
     }
 }

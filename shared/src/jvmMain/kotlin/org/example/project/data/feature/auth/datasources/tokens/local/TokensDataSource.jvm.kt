@@ -5,5 +5,7 @@ import com.russhwolf.settings.Settings
 import java.util.prefs.Preferences
 
 actual fun createSettings(): Settings {
-    return PreferencesSettings(Preferences.userNodeForPackage(SettingsTokensDataSource::class.java))
+    return PreferencesSettings(
+        Preferences.userNodeForPackage(SettingsTokensDataSource::class.java)
+    )
 }

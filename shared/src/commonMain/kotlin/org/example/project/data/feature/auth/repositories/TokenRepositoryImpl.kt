@@ -9,7 +9,7 @@ import org.example.project.domain.feature.auth.models.TokenPair
 import org.example.project.domain.feature.auth.repositories.TokenRepository
 
 class TokenRepositoryImpl(
-    private val tokensDataSource: TokensDataSource
+    private val tokensDataSource: TokensDataSource,
 ): TokenRepository {
     override fun saveTokens(tokenPair: TokenPair) {
         val accessTokenData = DataAccessToken(tokenPair.accessToken.value)

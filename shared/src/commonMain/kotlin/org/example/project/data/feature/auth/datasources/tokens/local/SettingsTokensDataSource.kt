@@ -6,7 +6,7 @@ import org.example.project.data.feature.auth.models.AccessToken
 import org.example.project.data.feature.auth.models.RefreshToken
 
 class SettingsTokensDataSource(
-    private val settings: Settings
+    private val settings: Settings,
 ) : TokensDataSource {
     private val accessTokenKey = "access_token"
     private val refreshTokenKey = "refresh_token"

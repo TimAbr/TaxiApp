@@ -14,10 +14,11 @@ sealed interface AuthLoginError {
     object NetworkError : AuthLoginError
     object ServerError : AuthLoginError
     object Unknown : AuthLoginError
+    object Canceled : AuthLoginError
     
     interface GoogleAuthError : AuthLoginError {
         object Cancelled : GoogleAuthError
-        object InvalidToken : AuthLoginError
+        object InvalidToken : GoogleAuthError
     }
 }
 
