@@ -38,8 +38,14 @@ class AndroidGoogleIdProvider(
             )
  
             val credential = result.credential
-            if (credential is GoogleIdTokenCredential) {
-                Outcome.Success(GoogleId(credential.idToken))
+            val googleIdTokenCredential = try {
+                GoogleIdTokenCredential.createFrom(credential.data)
+            } catch (e: Exception) {
+                null
+            }
+
+            if (googleIdTokenCredential != null) {
+                Outcome.Success(GoogleId(googleIdTokenCredential.idToken))
             } else {
                 Outcome.Error(AuthLoginError.Unknown)
             }

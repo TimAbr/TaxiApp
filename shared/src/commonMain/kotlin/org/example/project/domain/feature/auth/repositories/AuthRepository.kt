@@ -17,6 +17,7 @@ sealed interface AuthLoginError {
     object Canceled : AuthLoginError
     
     interface GoogleAuthError : AuthLoginError {
+        object NoCredentials : GoogleAuthError
         object Cancelled : GoogleAuthError
         object InvalidToken : GoogleAuthError
     }

@@ -1,8 +1,10 @@
 package org.example.project.data.feature.auth.repositories
 
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.withContext
 import org.example.project.data.feature.auth.datasources.auth.google.GoogleIdProvider
 import org.example.project.data.feature.auth.datasources.auth.remote.AuthRemoteDataSource
 import org.example.project.data.feature.auth.models.remote.request.GoogleAuthRequestDto
@@ -25,43 +27,42 @@ class AuthRepositoryImpl(
     private val _isAuthorized = MutableStateFlow(tokenRepository.getAccessToken() != null)
     override val isAuthorized: StateFlow<Boolean> = _isAuthorized.asStateFlow()
 
-    override suspend fun login(method: AuthMethod): Outcome<Unit, AuthLoginError> {
-        return when (method) {
-            is AuthMethod.Google -> handleGoogleLogin()
-        }
-    }
+    override suspend fun login(method: AuthMethod): Outcome<Unit, AuthLoginError> = withContext(
+        Dispatchers.Default) {
+        when (method) {
+            is AuthMethod.Google -> {
+                val googleResult = googleIdProvider.getId()
+                
+                if (googleResult is Outcome.Error) {
+                    return@withContext Outcome.Error(
+                        code = googleResult.code,
+                        message = googleResult.message,
+                    )
+                }
 
-    private suspend fun handleGoogleLogin(): Outcome<Unit, AuthLoginError> {
-        val googleResult = googleIdProvider.getId()
-        
-        if (googleResult is Outcome.Error) {
-            return Outcome.Error(
-                code = googleResult.code,
-                message = googleResult.message,
-            )
-        }
-
-        val idToken = (googleResult as Outcome.Success).value
-        val remoteResult = remoteDataSource
-            .authenticateWithGoogle(GoogleAuthRequestDto(idToken))
-        
-        return when (remoteResult) {
-            is Outcome.Success -> {
-                val tokens = remoteResult.value
-                tokenRepository.saveTokens(
-                    TokenPair(
-                        accessToken = AccessToken(tokens.accessToken.value),
-                        refreshToken = RefreshToken(tokens.refreshToken.value),
-                    ),
-                )
-                _isAuthorized.value = true
-                Outcome.Success(Unit)
-            }
-            is Outcome.Error -> {
-                Outcome.Error(
-                    code = remoteResult.code,
-                    message = remoteResult.message,
-                )
+                val idToken = (googleResult as Outcome.Success).value
+                val remoteResult = remoteDataSource
+                    .authenticateWithGoogle(GoogleAuthRequestDto(idToken))
+                
+                when (remoteResult) {
+                    is Outcome.Success -> {
+                        val tokens = remoteResult.value
+                        tokenRepository.saveTokens(
+                            TokenPair(
+                                accessToken = AccessToken(tokens.accessToken.value),
+                                refreshToken = RefreshToken(tokens.refreshToken.value),
+                            ),
+                        )
+                        _isAuthorized.value = true
+                        Outcome.Success(Unit)
+                    }
+                    is Outcome.Error -> {
+                        Outcome.Error(
+                            code = remoteResult.code,
+                            message = remoteResult.message,
+                        )
+                    }
+                }
             }
         }
     }
