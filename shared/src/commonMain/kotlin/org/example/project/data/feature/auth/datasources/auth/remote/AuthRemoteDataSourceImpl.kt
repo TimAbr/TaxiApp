@@ -5,6 +5,7 @@ import io.ktor.client.call.body
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
 import io.ktor.http.ContentType
+import io.ktor.http.URLBuilder
 import io.ktor.http.contentType
 import io.ktor.http.isSuccess
 import org.example.project.BASE_URL
@@ -17,6 +18,7 @@ import org.example.project.utils.models.Outcome
 
 class AuthRemoteDataSourceImpl(
     private val httpClient: HttpClient,
+    private val baseURL: String
 ) : AuthRemoteDataSource {
 
     override suspend fun authenticateWithGoogle(request: GoogleAuthRequestDto): Outcome<TokenResponseDto, AuthLoginError> {

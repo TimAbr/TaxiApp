@@ -5,6 +5,7 @@ plugins {
     alias(libs.plugins.kotlinMultiplatform)
     alias(libs.plugins.androidLibrary)
     alias(libs.plugins.kotlinSerialization)
+    alias(libs.plugins.buildConfig)
 }
 
 kotlin {
@@ -41,8 +42,26 @@ kotlin {
             implementation(libs.googleid)
             implementation(libs.koin.android)
         }
+
+        jvmMain.dependencies {
+            implementation(libs.google.api.client)
+            implementation(libs.google.oauth.client.jetty)
+            implementation(libs.google.auth.library.oauth2.http)
+        }
     }
 }
+
+
+val props = Properties().apply {
+    val localPropertiesFile = rootProject.file("local.properties")
+    if (localPropertiesFile.exists()) {
+        load(localPropertiesFile.inputStream())
+    }
+}
+
+val googleWebClientId = props.getProperty("google.web.client.id.android") ?: ""
+val googleDesktopId = props.getProperty("google.desktop.client.id") ?: ""
+val googleDesktopSecret = props.getProperty("google.desktop.client.secret") ?: ""
 
 android {
     namespace = "org.example.project.shared"
@@ -52,16 +71,7 @@ android {
         targetCompatibility = JavaVersion.VERSION_11
     }
     defaultConfig {
-        minSdk = libs.versions.android.minSdk.get().toInt()
-        
-        val webClientId = if (rootProject.file("local.properties").exists()) {
-            val props = Properties().apply {
-                load(rootProject.file("local.properties").inputStream())
-            }
-            props.getProperty("google.web.client.id.android") ?: ""
-        } else {
-            ""
-        }
+        val webClientId = props.getProperty("google.web.client.id.android") ?: ""
         buildConfigField("String", "GOOGLE_WEB_CLIENT_ID", "\"$webClientId\"")
     }
 
@@ -69,3 +79,16 @@ android {
         buildConfig = true
     }
 }
+
+buildConfig {
+    sourceSets.named("jvmMain") {
+        className.set("DesktopConfig")
+
+        val desktopId = props.getProperty("google.desktop.client.id") ?: ""
+        val desktopSecret = props.getProperty("google.desktop.client.secret") ?: ""
+
+        buildConfigField("String", "GOOGLE_DESKTOP_ID", "\"$desktopId\"")
+        buildConfigField("String", "GOOGLE_DESKTOP_SECRET", "\"$desktopSecret\"")
+    }
+}
+
