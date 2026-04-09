@@ -7,5 +7,3 @@ import org.example.project.utils.models.Outcome
 interface GoogleIdProvider {
     suspend fun getId(): Outcome<GoogleId, AuthLoginError>
 }
-
-expect fun createGoogleSignInProvider(): GoogleIdProvider

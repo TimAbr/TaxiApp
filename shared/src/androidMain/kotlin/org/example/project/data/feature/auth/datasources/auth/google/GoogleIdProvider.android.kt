@@ -63,7 +63,3 @@ class AndroidGoogleIdProvider(
         }
     }
 }
-
-actual fun createGoogleSignInProvider(): GoogleIdProvider {
-    TODO("")
-}

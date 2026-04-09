@@ -1,6 +1,5 @@
 package org.example.project.data.feature.auth.datasources.tokens.local
 
-import com.russhwolf.settings.Settings
 import org.example.project.data.feature.auth.models.AccessToken
 import org.example.project.data.feature.auth.models.RefreshToken
 
@@ -15,5 +14,3 @@ interface TokensDataSource {
 
     fun clear()
 }
-
-expect fun createSettings(): Settings
