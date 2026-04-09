@@ -7,7 +7,9 @@ import com.russhwolf.settings.Settings
 import com.russhwolf.settings.SharedPreferencesSettings
 import org.example.project.data.feature.auth.datasources.auth.google.AndroidGoogleIdProvider
 import org.example.project.data.feature.auth.datasources.auth.google.GoogleIdProvider
+import org.example.project.data.feature.auth.datasources.auth.remote.SERVER_PORT
 import org.koin.core.module.Module
+import org.koin.core.qualifier.named
 import org.koin.dsl.bind
 import org.koin.dsl.module
 
@@ -27,5 +29,9 @@ actual val platformDataModule: Module = module {
             EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
         )
         SharedPreferencesSettings(sharedPrefs)
+    }
+
+    single (named("BASE_URL")){
+        "http://10.0.2.2:$SERVER_PORT"
     }
 }

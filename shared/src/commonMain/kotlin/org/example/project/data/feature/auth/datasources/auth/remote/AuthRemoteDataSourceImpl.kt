@@ -5,10 +5,8 @@ import io.ktor.client.call.body
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
 import io.ktor.http.ContentType
-import io.ktor.http.URLBuilder
 import io.ktor.http.contentType
 import io.ktor.http.isSuccess
-import org.example.project.BASE_URL
 import org.example.project.data.feature.auth.mappers.toAuthLoginError
 import org.example.project.data.feature.auth.models.remote.request.GoogleAuthRequestDto
 import org.example.project.data.feature.auth.models.remote.request.RefreshRequestDto
@@ -23,7 +21,7 @@ class AuthRemoteDataSourceImpl(
 
     override suspend fun authenticateWithGoogle(request: GoogleAuthRequestDto): Outcome<TokenResponseDto, AuthLoginError> {
         return try {
-            val response = httpClient.post("$BASE_URL/auth/google") {
+            val response = httpClient.post("$baseURL/auth/google") {
                 contentType(ContentType.Application.Json)
                 setBody(request)
             }
@@ -41,7 +39,7 @@ class AuthRemoteDataSourceImpl(
 
     override suspend fun refreshTokens(request: RefreshRequestDto): Outcome<TokenResponseDto, AuthLoginError> {
         return try {
-            val response = httpClient.post("$BASE_URL/auth/refresh") {
+            val response = httpClient.post("$baseURL/auth/refresh") {
                 contentType(ContentType.Application.Json)
                 setBody(request)
             }

@@ -33,10 +33,6 @@ val dataModule = module {
         }
     }
 
-    single (named("BASE_URL")){
-        "http://127.0.0.1:$SERVER_PORT"
-    }
-
     single {
         AuthRemoteDataSourceImpl(
             get(),
