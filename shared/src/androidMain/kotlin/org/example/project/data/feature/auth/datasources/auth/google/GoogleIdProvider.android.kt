@@ -49,7 +49,8 @@ class AndroidGoogleIdProvider(
     private fun handleSignIn(result: GetCredentialResponse): Outcome<GoogleId, AuthLoginError> {
         val credential = result.credential
 
-        return if (credential is CustomCredential &&
+        return if (
+            credential is CustomCredential &&
             credential.type == GoogleIdTokenCredential.TYPE_GOOGLE_ID_TOKEN_CREDENTIAL
         ) {
             try {

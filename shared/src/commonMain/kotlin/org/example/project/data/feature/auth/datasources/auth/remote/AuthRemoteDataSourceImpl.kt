@@ -16,10 +16,12 @@ import org.example.project.utils.models.Outcome
 
 class AuthRemoteDataSourceImpl(
     private val httpClient: HttpClient,
-    private val baseURL: String
+    private val baseURL: String,
 ) : AuthRemoteDataSource {
 
-    override suspend fun authenticateWithGoogle(request: GoogleAuthRequestDto): Outcome<TokenResponseDto, AuthLoginError> {
+    override suspend fun authenticateWithGoogle(
+        request: GoogleAuthRequestDto,
+    ): Outcome<TokenResponseDto, AuthLoginError> {
         return try {
             val response = httpClient.post("$baseURL/auth/google") {
                 contentType(ContentType.Application.Json)
@@ -31,13 +33,14 @@ class AuthRemoteDataSourceImpl(
             } else {
                 Outcome.Error(response.status.toAuthLoginError())
             }
-        }
-        catch (e: Exception) {
+        } catch (e: Exception) {
             Outcome.Error(e.toAuthLoginError())
         }
     }
 
-    override suspend fun refreshTokens(request: RefreshRequestDto): Outcome<TokenResponseDto, AuthLoginError> {
+    override suspend fun refreshTokens(
+        request: RefreshRequestDto,
+    ): Outcome<TokenResponseDto, AuthLoginError> {
         return try {
             val response = httpClient.post("$baseURL/auth/refresh") {
                 contentType(ContentType.Application.Json)
@@ -49,8 +52,7 @@ class AuthRemoteDataSourceImpl(
             } else {
                 Outcome.Error(response.status.toAuthLoginError())
             }
-        }
-        catch (e: Exception) {
+        } catch (e: Exception) {
             Outcome.Error(e.toAuthLoginError())
         }
     }

@@ -11,13 +11,13 @@ import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
 fun NavGraph(
-    startDestination: Screen = Screen.Auth
+    startDestination: Screen = Screen.Auth,
 ) {
     val navController = rememberNavController()
 
     NavHost(
         navController = navController,
-        startDestination = startDestination
+        startDestination = startDestination,
     ) {
         composable<Screen.Auth> {
             val viewModel: AuthViewModel = koinViewModel()
@@ -27,7 +27,7 @@ fun NavGraph(
                     navController.navigate(Screen.Main) {
                         popUpTo(Screen.Auth) { inclusive = true }
                     }
-                }
+                },
             )
         }
         composable<Screen.Main> {

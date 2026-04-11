@@ -4,7 +4,6 @@ import io.ktor.client.HttpClient
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.serialization.json.Json
-import org.example.project.data.feature.auth.datasources.auth.remote.SERVER_PORT
 import org.example.project.data.feature.auth.datasources.auth.remote.AuthRemoteDataSource
 import org.example.project.data.feature.auth.datasources.auth.remote.AuthRemoteDataSourceImpl
 import org.example.project.data.feature.auth.datasources.tokens.local.SettingsTokensDataSource
@@ -24,11 +23,13 @@ val dataModule = module {
     single {
         HttpClient {
             install(ContentNegotiation) {
-                json(Json {
-                    ignoreUnknownKeys = true
-                    prettyPrint = true
-                    isLenient = true
-                })
+                json(
+                    Json {
+                        ignoreUnknownKeys = true
+                        prettyPrint = true
+                        isLenient = true
+                    },
+                )
             }
         }
     }
@@ -36,7 +37,7 @@ val dataModule = module {
     single {
         AuthRemoteDataSourceImpl(
             get(),
-            get(named("BASE_URL"))
+            get(named("BASE_URL")),
         )
     } bind AuthRemoteDataSource::class
 

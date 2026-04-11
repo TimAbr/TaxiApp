@@ -27,7 +27,7 @@ import taxiapp.composeapp.generated.resources.error_unknown
 @Composable
 fun AuthScreen(
     viewModel: AuthViewModel,
-    onNavigateToMain: () -> Unit
+    onNavigateToMain: () -> Unit,
 ) {
     val state by viewModel.state.collectAsState()
 
@@ -44,29 +44,26 @@ fun AuthScreen(
                 .padding(padding)
                 .padding(24.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.SpaceBetween
+            verticalArrangement = Arrangement.SpaceBetween,
         ) {
-            // Top: Auth Title
             Text(
                 text = stringResource(Res.string.auth_title),
                 fontSize = 32.sp,
                 fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(top = 40.dp)
+                modifier = Modifier.padding(top = 40.dp),
             )
 
-            // Middle: Google Logo Placeholder
             Box(
                 modifier = Modifier.weight(1f),
-                contentAlignment = Alignment.Center
+                contentAlignment = Alignment.Center,
             ) {
                 Image(
                     painter = painterResource(Res.drawable.google_logo_placeholder),
                     contentDescription = "Google Logo",
-                    modifier = Modifier.size(120.dp)
+                    modifier = Modifier.size(120.dp),
                 )
             }
 
-            // Bottom: Google Sign In Button
             Button(
                 onClick = { viewModel.loginWithGoogle() },
                 modifier = Modifier
@@ -75,28 +72,27 @@ fun AuthScreen(
                     .padding(bottom = 20.dp),
                 shape = MaterialTheme.shapes.medium,
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.primary
+                    containerColor = MaterialTheme.colorScheme.primary,
                 ),
-                enabled = !state.isLoading
+                enabled = !state.isLoading,
             ) {
                 if (state.isLoading) {
                     CircularProgressIndicator(
                         modifier = Modifier.size(24.dp),
                         color = MaterialTheme.colorScheme.onPrimary,
-                        strokeWidth = 2.dp
+                        strokeWidth = 2.dp,
                     )
                 } else {
                     Text(
                         text = stringResource(Res.string.auth_google_button),
                         fontSize = 18.sp,
-                        fontWeight = FontWeight.Medium
+                        fontWeight = FontWeight.Medium,
                     )
                 }
             }
         }
     }
 
-    // Localized error handling
     state.error?.let { error ->
         val errorMessage = when (error) {
             is AuthLoginError.NetworkError -> stringResource(Res.string.error_network)
@@ -109,13 +105,19 @@ fun AuthScreen(
 
         AlertDialog(
             onDismissRequest = { viewModel.clearError() },
-            title = { Text(stringResource(Res.string.auth_error)) },
-            text = { Text(errorMessage) },
+            title = {
+                Text(stringResource(Res.string.auth_error))
+            },
+            text = {
+                Text(errorMessage)
+            },
             confirmButton = {
-                TextButton(onClick = { viewModel.clearError() }) {
+                TextButton(
+                    onClick = { viewModel.clearError() },
+                ) {
                     Text("OK")
                 }
-            }
+            },
         )
     }
 }

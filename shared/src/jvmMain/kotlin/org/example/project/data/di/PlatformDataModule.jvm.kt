@@ -16,17 +16,17 @@ import java.util.prefs.Preferences
 actual val platformDataModule: Module = module {
     single<Settings> {
         PreferencesSettings(
-            Preferences.userNodeForPackage(SettingsTokensDataSource::class.java)
+            Preferences.userNodeForPackage(SettingsTokensDataSource::class.java),
         )
     }
     single<GoogleIdProvider> {
         DesktopGoogleIdProvider(
             desktopClientId = DesktopConfig.GOOGLE_DESKTOP_ID,
-            desktopClientSecret = DesktopConfig.GOOGLE_DESKTOP_SECRET
+            desktopClientSecret = DesktopConfig.GOOGLE_DESKTOP_SECRET,
         )
     }
 
-    single (named("BASE_URL")){
+    single(named("BASE_URL")) {
         "http://127.0.0.1:$SERVER_PORT"
     }
 }

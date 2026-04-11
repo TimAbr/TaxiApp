@@ -14,7 +14,9 @@ import org.koin.dsl.bind
 import org.koin.dsl.module
 
 actual val platformDataModule: Module = module {
-    single { AndroidGoogleIdProvider(get()) } bind GoogleIdProvider::class
+    single {
+        AndroidGoogleIdProvider(get())
+    } bind GoogleIdProvider::class
 
     single<Settings> {
         val context: Context = get()
@@ -26,12 +28,12 @@ actual val platformDataModule: Module = module {
             "encrypted_tokens",
             masterKey,
             EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
-            EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
+            EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM,
         )
         SharedPreferencesSettings(sharedPrefs)
     }
 
-    single (named("BASE_URL")){
+    single(named("BASE_URL")) {
         "http://10.0.2.2:$SERVER_PORT"
     }
 }

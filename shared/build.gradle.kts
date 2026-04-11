@@ -51,7 +51,6 @@ kotlin {
     }
 }
 
-
 val props = Properties().apply {
     val localPropertiesFile = rootProject.file("local.properties")
     if (localPropertiesFile.exists()) {
@@ -91,4 +90,3 @@ buildConfig {
         buildConfigField("String", "GOOGLE_DESKTOP_SECRET", "\"$desktopSecret\"")
     }
 }
-

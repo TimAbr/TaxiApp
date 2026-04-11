@@ -15,7 +15,7 @@ import java.net.URI
 
 class DesktopGoogleIdProvider(
     private val desktopClientId: String,
-    private val desktopClientSecret: String
+    private val desktopClientSecret: String,
 ) : GoogleIdProvider {
 
     override suspend fun getId(): Outcome<GoogleId, AuthLoginError> = withContext(Dispatchers.IO) {
@@ -28,17 +28,20 @@ class DesktopGoogleIdProvider(
                 jsonFactory,
                 desktopClientId,
                 desktopClientSecret,
-                listOf("email", "profile", "openid")
+                listOf("email", "profile", "openid"),
             ).build()
 
-            val receiver = LocalServerReceiver.Builder().setPort(8888).build()
+            val receiver = LocalServerReceiver.Builder()
+                .setPort(8888)
+                .build()
             val redirectUri = receiver.redirectUri
 
             val authUrl = flow.newAuthorizationUrl()
                 .setRedirectUri(redirectUri)
                 .build()
 
-            if (Desktop.isDesktopSupported() &&
+            if (
+                Desktop.isDesktopSupported() &&
                 Desktop.getDesktop().isSupported(Desktop.Action.BROWSE)
             ) {
                 Desktop.getDesktop().browse(URI(authUrl))
@@ -54,7 +57,7 @@ class DesktopGoogleIdProvider(
 
             val idToken = response.idToken
                 ?: return@withContext Outcome.Error(
-                    AuthLoginError.GoogleAuthError.InvalidToken
+                    AuthLoginError.GoogleAuthError.InvalidToken,
                 )
 
             Outcome.Success(GoogleId(idToken))

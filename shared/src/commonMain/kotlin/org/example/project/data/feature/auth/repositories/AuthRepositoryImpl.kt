@@ -28,7 +28,8 @@ class AuthRepositoryImpl(
     override val isAuthorized: StateFlow<Boolean> = _isAuthorized.asStateFlow()
 
     override suspend fun login(method: AuthMethod): Outcome<Unit, AuthLoginError> = withContext(
-        Dispatchers.Default) {
+        Dispatchers.Default,
+    ) {
         when (method) {
             is AuthMethod.Google -> {
                 val googleResult = googleIdProvider.getId()

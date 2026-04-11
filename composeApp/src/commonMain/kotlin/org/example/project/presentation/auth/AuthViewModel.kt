@@ -15,37 +15,58 @@ import org.example.project.utils.models.Outcome
 class AuthViewModel(
     private val loginWithGoogleUseCase: LoginWithGoogleUseCase,
     private val observeAuthStateUseCase: ObserveAuthStateUseCase,
-    private val getAuthStateUseCase: GetAuthStateUseCase
+    private val getAuthStateUseCase: GetAuthStateUseCase,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(AuthState())
     val state: StateFlow<AuthState> = _state.asStateFlow()
 
     init {
-        _state.update { it.copy(isAuthorized = getAuthStateUseCase()) }
+        _state.update {
+            it.copy(isAuthorized = getAuthStateUseCase())
+        }
         viewModelScope.launch {
             observeAuthStateUseCase().collect { isAuthorized ->
-                _state.update { it.copy(isAuthorized = isAuthorized) }
+                _state.update {
+                    it.copy(isAuthorized = isAuthorized)
+                }
             }
         }
     }
 
     fun loginWithGoogle() {
         viewModelScope.launch {
-            _state.update { it.copy(isLoading = true, error = null) }
+            _state.update {
+                it.copy(
+                    isLoading = true,
+                    error = null,
+                )
+            }
             val outcome = loginWithGoogleUseCase()
             when (outcome) {
                 is Outcome.Success -> {
-                    _state.update { it.copy(isLoading = false, isAuthorized = true) }
+                    _state.update {
+                        it.copy(
+                            isLoading = false,
+                            isAuthorized = true,
+                        )
+                    }
                 }
                 is Outcome.Error -> {
-                    _state.update { it.copy(isLoading = false, error = outcome.code) }
+                    _state.update {
+                        it.copy(
+                            isLoading = false,
+                            error = outcome.code,
+                        )
+                    }
                 }
             }
         }
     }
 
     fun clearError() {
-        _state.update { it.copy(error = null) }
+        _state.update {
+            it.copy(error = null)
+        }
     }
 }

@@ -10,11 +10,15 @@ import org.example.project.domain.feature.auth.repositories.TokenRepository
 
 class TokenRepositoryImpl(
     private val tokensDataSource: TokensDataSource,
-): TokenRepository {
+) : TokenRepository {
+
     override fun saveTokens(tokenPair: TokenPair) {
         val accessTokenData = DataAccessToken(tokenPair.accessToken.value)
         val refreshTokenData = DataRefreshToken(tokenPair.refreshToken.value)
-        tokensDataSource.saveTokens(accessTokenData, refreshTokenData)
+        tokensDataSource.saveTokens(
+            accessToken = accessTokenData,
+            refreshToken = refreshTokenData,
+        )
     }
 
     override fun updateAccessToken(accessToken: AccessToken) {
@@ -26,17 +30,24 @@ class TokenRepositoryImpl(
     }
 
     override fun getAccessToken(): AccessToken? {
-        return tokensDataSource.getAccessToken()?.let { AccessToken(it.value) }
+        return tokensDataSource.getAccessToken()?.let {
+            AccessToken(it.value)
+        }
     }
 
     override fun getRefreshToken(): RefreshToken? {
-        return tokensDataSource.getRefreshToken()?.let { RefreshToken(it.value) }
+        return tokensDataSource.getRefreshToken()?.let {
+            RefreshToken(it.value)
+        }
     }
 
     override fun getTokenPair(): TokenPair? {
         val accessToken = getAccessToken() ?: return null
         val refreshToken = getRefreshToken() ?: return null
-        return TokenPair(accessToken, refreshToken)
+        return TokenPair(
+            accessToken = accessToken,
+            refreshToken = refreshToken,
+        )
     }
 
     override fun clear() {

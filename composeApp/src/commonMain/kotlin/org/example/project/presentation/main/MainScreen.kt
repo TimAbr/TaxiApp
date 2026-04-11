@@ -14,7 +14,7 @@ import taxiapp.composeapp.generated.resources.main_screen_placeholder
 fun MainScreen() {
     Box(
         modifier = Modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center
+        contentAlignment = Alignment.Center,
     ) {
         Text(text = stringResource(Res.string.main_screen_placeholder))
     }
