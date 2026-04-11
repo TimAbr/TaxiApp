@@ -10,12 +10,12 @@ import org.example.project.utils.models.Outcome
 import java.util.Collections
 
 class GoogleAuthService(
-    googleClientId: String,
+    allowedClientIds: List<String>,
 ) : ExternalAuthService {
 
     private val verifier = GoogleIdTokenVerifier
         .Builder(NetHttpTransport(), GsonFactory.getDefaultInstance())
-        .setAudience(Collections.singletonList(googleClientId))
+        .setAudience(allowedClientIds)
         .build()
 
     override suspend fun verifyToken(

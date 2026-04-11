@@ -10,7 +10,7 @@ object ConfigKeys {
     const val DB_URL = "storage.jdbcURL"
     const val JWT_SECRET = "jwt.secret"
     const val JWT_REALM = "jwt.realm"
-    const val GOOGLE_CLIENT_ID = "google.clientId"
+    const val GOOGLE_CLIENT_IDS = "google.clientIds"
     const val JWT_ACCESS_TOKEN_EXPIRATION_HOURS = "jwt.accessTokenExpirationHours"
     const val JWT_REFRESH_TOKEN_EXPIRATION_DAYS = "jwt.refreshTokenExpirationDays"
 }
@@ -33,7 +33,7 @@ data class JwtConfig(
 )
 
 data class GoogleConfig(
-    val clientId: String,
+    val allowedClientIds: List<String>,
 )
 
 fun ApplicationConfig.toAppConfig(): AppConfig {
@@ -51,7 +51,15 @@ fun ApplicationConfig.toAppConfig(): AppConfig {
             ),
         ),
         google = GoogleConfig(
-            clientId = property(ConfigKeys.GOOGLE_CLIENT_ID).getString(),
+            allowedClientIds = try {
+                property(ConfigKeys.GOOGLE_CLIENT_IDS).getList()
+            } catch (e: Exception) {
+                property(ConfigKeys.GOOGLE_CLIENT_IDS).getString()
+                    .removeSurrounding("[", "]")
+                    .split(",")
+                    .map { it.trim().removeSurrounding("\"").removeSurrounding("'") }
+                    .filter { it.isNotEmpty() }
+            }
         ),
     )
 }

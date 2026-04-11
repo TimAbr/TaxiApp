@@ -68,7 +68,7 @@ fun Application.module() {
 
     val tokenManager = JwtTokenManager(appConfig.jwt.secret, appConfig.jwt.tokenManagerConfig)
 
-    val externalAuthService = GoogleAuthService(appConfig.google.clientId)
+    val externalAuthService = GoogleAuthService(appConfig.google.allowedClientIds)
     val authService = AuthService(
         userRepository = userRepository,
         tokenRepository = tokenRepository,
