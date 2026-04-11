@@ -7,6 +7,7 @@ import androidx.navigation.compose.rememberNavController
 import org.example.project.presentation.auth.AuthScreen
 import org.example.project.presentation.auth.AuthViewModel
 import org.example.project.presentation.main.MainScreen
+import org.example.project.presentation.main.MainViewModel
 import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
@@ -31,7 +32,15 @@ fun NavGraph(
             )
         }
         composable<Screen.Main> {
-            MainScreen()
+            val viewModel: MainViewModel = koinViewModel()
+            MainScreen(
+                viewModel = viewModel,
+                onLogoutSuccess = {
+                    navController.navigate(Screen.Auth) {
+                        popUpTo(Screen.Main) { inclusive = true }
+                    }
+                },
+            )
         }
     }
 }

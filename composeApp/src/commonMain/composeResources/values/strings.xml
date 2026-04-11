@@ -8,4 +8,8 @@
     <string name="error_server">Ошибка сервера, попробуйте позже</string>
     <string name="error_canceled">Вход отменен</string>
     <string name="error_unknown">Неизвестная ошибка</string>
+    <string name="logout_confirm_title">Выход из аккаунта</string>
+    <string name="logout_confirm_message">Вы точно хотите выйти из аккаунта?</string>
+    <string name="logout_button">Выйти</string>
+    <string name="cancel_button">Отмена</string>
 </resources>
