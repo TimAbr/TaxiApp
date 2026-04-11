@@ -11,8 +11,12 @@ private val LightColorScheme = lightColorScheme(
     onPrimary = LightOnPrimary,
     background = LightBackground,
     onBackground = LightOnBackground,
+    surface = LightBackground,
     onSurface = LightOnSurface,
     onSurfaceVariant = LightOnSurfaceVariant,
+    outlineVariant = LightOutlineVariant,
+    error = LightError,
+    onError = LightOnError,
 )
 
 private val DarkColorScheme = darkColorScheme(
@@ -20,8 +24,12 @@ private val DarkColorScheme = darkColorScheme(
     onPrimary = DarkOnPrimary,
     background = DarkBackground,
     onBackground = DarkOnBackground,
+    surface = DarkBackground,
     onSurface = DarkOnSurface,
     onSurfaceVariant = DarkOnSurfaceVariant,
+    outlineVariant = DarkOutlineVariant,
+    error = DarkError,
+    onError = DarkOnError,
 )
 
 @Composable
@@ -29,10 +37,15 @@ fun TaxiAppTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
     content: @Composable () -> Unit,
 ) {
-    val colorScheme = if (darkTheme) DarkColorScheme else LightColorScheme
+    val colorScheme = if (darkTheme) {
+        DarkColorScheme
+    } else {
+        LightColorScheme
+    }
 
     MaterialTheme(
         colorScheme = colorScheme,
+        typography = Typography,
         content = content,
     )
 }

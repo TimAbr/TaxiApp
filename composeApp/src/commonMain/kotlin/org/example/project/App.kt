@@ -9,9 +9,9 @@ import org.koin.compose.KoinContext
 @Composable
 @Preview
 fun App() {
-    KoinContext {
-        TaxiAppTheme {
-            NavGraph()
-        }
+
+    TaxiAppTheme {
+        NavGraph()
     }
+
 }
