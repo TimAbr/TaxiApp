@@ -6,7 +6,7 @@ import org.example.project.domain.feature.location.providers.PermissionManager
 class CheckLocationPermissionUseCase(
     private val permissionManager: PermissionManager,
 ) {
-    operator fun invoke(): PermissionStatus {
+    suspend operator fun invoke(): PermissionStatus {
         return permissionManager.checkLocationPermission()
     }
 }
