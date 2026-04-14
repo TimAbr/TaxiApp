@@ -108,7 +108,7 @@ private fun MainScreenContent(
             ) {
                 Image(
                     painter = painterResource(Res.drawable.google_logo),
-                    contentDescription = "User Profile",
+                    contentDescription = "Logout",
                     modifier = Modifier.size(32.dp),
                     colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.outlineVariant),
                 )
