@@ -12,6 +12,11 @@
     <string name="logout_confirm_message">Вы точно хотите выйти из аккаунта?</string>
     <string name="logout_button">Выйти</string>
     <string name="cancel_button">Отмена</string>
+    <string name="location_permission_title">Установите свое местоположение</string>
+    <string name="location_permission_description">Включите общий доступ к местоположению, чтобы ваш водитель мог видеть, где вы находитесь</string>
+    <string name="location_permission_button">Продолжить</string>
+    <string name="location_permission_denied_always">Разрешение отклонено навсегда. Пожалуйста, включите его в настройках.</string>
+    <string name="location_permission_settings_button">В настройки</string>
     <string name="ok_button">OK</string>
     <string name="google_logo_content_description">Логотип Google</string>
 </resources>

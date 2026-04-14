@@ -1,0 +1,166 @@
+package org.example.project.presentation.location.permission
+
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import org.example.project.domain.feature.location.models.PermissionStatus
+import org.example.project.presentation.theme.TaxiAppTheme
+import org.jetbrains.compose.resources.stringResource
+import taxiapp.composeapp.generated.resources.Res
+import taxiapp.composeapp.generated.resources.location_permission_button
+import taxiapp.composeapp.generated.resources.location_permission_denied_always
+import taxiapp.composeapp.generated.resources.location_permission_description
+import taxiapp.composeapp.generated.resources.location_permission_settings_button
+import taxiapp.composeapp.generated.resources.location_permission_title
+
+@Composable
+fun LocationPermissionScreen(
+    viewModel: LocationPermissionViewModel,
+    onNavigate: () -> Unit,
+) {
+    val permissionStatus by viewModel.permissionStatus.collectAsStateWithLifecycle()
+
+    LaunchedEffect(permissionStatus) {
+        if (permissionStatus == PermissionStatus.GRANTED) {
+            onNavigate()
+        }
+    }
+
+    LocationPermissionContent(
+        permissionStatus = permissionStatus,
+        onGrantClick = viewModel::requestPermission,
+    )
+}
+
+@Composable
+private fun LocationPermissionContent(
+    permissionStatus: PermissionStatus,
+    onGrantClick: () -> Unit,
+) {
+    Scaffold { padding ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
+                .padding(24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center,
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(200.dp)
+                    .clip(CircleShape)
+                    .background(MaterialTheme.colorScheme.surfaceVariant),
+                contentAlignment = Alignment.Center,
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(80.dp)
+                        .clip(CircleShape)
+                        .background(MaterialTheme.colorScheme.outlineVariant),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(40.dp)
+                            .clip(CircleShape)
+                            .background(MaterialTheme.colorScheme.primary),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(15.dp)
+                                .clip(CircleShape)
+                                .background(Color.White),
+                        )
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(48.dp))
+
+            Text(
+                text = stringResource(Res.string.location_permission_title),
+                style = MaterialTheme.typography.headlineSmall,
+                fontWeight = FontWeight.Bold,
+                textAlign = TextAlign.Center,
+                color = MaterialTheme.colorScheme.onSurface,
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Text(
+                text = if (permissionStatus == PermissionStatus.DENIED_ALWAYS) {
+                    stringResource(Res.string.location_permission_denied_always)
+                } else {
+                    stringResource(Res.string.location_permission_description)
+                },
+                style = MaterialTheme.typography.bodyLarge,
+                textAlign = TextAlign.Center,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                lineHeight = 24.sp,
+            )
+
+            Spacer(modifier = Modifier.height(48.dp))
+
+            Button(
+                onClick = onGrantClick,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(56.dp),
+                shape = RoundedCornerShape(12.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = MaterialTheme.colorScheme.onPrimary,
+                ),
+            ) {
+                Text(
+                    text = if (permissionStatus == PermissionStatus.DENIED_ALWAYS) {
+                        stringResource(Res.string.location_permission_settings_button)
+                    } else {
+                        stringResource(Res.string.location_permission_button)
+                    },
+                    style = MaterialTheme.typography.titleMedium,
+                )
+            }
+        }
+    }
+}
+
+@Preview
+@Composable
+private fun LocationPermissionScreenPreview() {
+    TaxiAppTheme {
+        LocationPermissionContent(
+            permissionStatus = PermissionStatus.DENIED,
+            onGrantClick = {},
+        )
+    }
+}

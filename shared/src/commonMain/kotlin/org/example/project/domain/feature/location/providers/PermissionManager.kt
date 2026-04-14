@@ -4,5 +4,5 @@ import org.example.project.domain.feature.location.models.PermissionStatus
 
 interface PermissionManager {
     suspend fun requestLocationPermission(): PermissionStatus
-    fun checkLocationPermission(): PermissionStatus
+    suspend fun checkLocationPermission(): PermissionStatus
 }
