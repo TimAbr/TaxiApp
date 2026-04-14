@@ -1,5 +1,6 @@
 package org.example.project
 
+import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.tooling.preview.Preview
 import org.example.project.presentation.navigation.NavGraph
@@ -9,6 +10,8 @@ import org.example.project.presentation.theme.TaxiAppTheme
 @Preview
 fun App() {
     TaxiAppTheme {
-        NavGraph()
+        Surface {
+            NavGraph()
+        }
     }
 }
