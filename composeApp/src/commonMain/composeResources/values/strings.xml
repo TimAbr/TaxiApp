@@ -13,8 +13,15 @@
     <string name="logout_button">Выйти</string>
     <string name="cancel_button">Отмена</string>
     <string name="location_permission_title">Установите свое местоположение</string>
-    <string name="location_permission_description">Включите общий доступ к местоположению, чтобы ваш водитель мог видеть, где вы находитесь</string>
+    <string name="location_permission_description">Включите доступ к местоположению, чтобы ваш водитель мог видеть, где вы находитесь</string>
     <string name="location_permission_button">Продолжить</string>
+    <string name="location_permission_denied_always_title">Разрешение заблокировано</string>
+    <string name="location_permission_denied_always_description">Доступ к геопозиции отклонен навсегда. Пожалуйста, включите его вручную в настройках приложения.</string>
+    <string name="location_permission_settings_button">Перейти в настройки</string>
+    <string name="location_permission_low_accuracy_title">Точное местоположение</string>
+    <string name="location_permission_low_accuracy_description">Текущая точность недостаточна. Пожалуйста, предоставьте доступ к точному местоположению (Fine Location).</string>
+    <string name="location_permission_denied_title">Нужен доступ</string>
+    <string name="location_permission_denied_description">Приложению необходим доступ к вашей геопозиции для корректной работы сервиса такси.</string>
     <string name="location_permission_denied_always">Разрешение отклонено навсегда. Пожалуйста, включите его в настройках.</string>
     <string name="location_permission_settings_button">В настройки</string>
     <string name="ok_button">OK</string>

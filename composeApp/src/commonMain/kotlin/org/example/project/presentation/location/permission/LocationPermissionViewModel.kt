@@ -7,15 +7,13 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import org.example.project.domain.feature.location.models.PermissionStatus
-import org.example.project.domain.feature.location.usecases.CheckLocationPermissionUseCase
-import org.example.project.domain.feature.location.usecases.RequestLocationPermissionUseCase
+import org.example.project.domain.feature.location.providers.PermissionManager
 
 class LocationPermissionViewModel(
-    private val checkLocationPermissionUseCase: CheckLocationPermissionUseCase,
-    private val requestLocationPermissionUseCase: RequestLocationPermissionUseCase,
+    private val permissionManager: PermissionManager,
 ) : ViewModel() {
 
-    private val _permissionStatus = MutableStateFlow(PermissionStatus.DENIED)
+    private val _permissionStatus = MutableStateFlow(PermissionStatus.NOT_DETERMINED)
     val permissionStatus: StateFlow<PermissionStatus> = _permissionStatus.asStateFlow()
 
     init {
@@ -24,13 +22,21 @@ class LocationPermissionViewModel(
 
     private fun checkPermission() {
         viewModelScope.launch {
-            _permissionStatus.value = checkLocationPermissionUseCase()
+            _permissionStatus.value = permissionManager.checkLocationPermission()
         }
     }
 
     fun requestPermission() {
         viewModelScope.launch {
-            _permissionStatus.value = requestLocationPermissionUseCase()
+            if (permissionStatus.value== PermissionStatus.DENIED_ALWAYS) {
+                permissionManager.openSettings()
+            } else {
+                _permissionStatus.value = permissionManager.requestLocationPermission()
+            }
         }
+    }
+
+    fun openSettings() {
+        permissionManager.openSettings()
     }
 }

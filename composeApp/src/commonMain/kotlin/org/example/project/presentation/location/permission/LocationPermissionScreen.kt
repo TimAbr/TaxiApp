@@ -8,6 +8,7 @@ import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -34,7 +35,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -48,8 +51,13 @@ import org.example.project.presentation.theme.TaxiAppTheme
 import org.jetbrains.compose.resources.stringResource
 import taxiapp.composeapp.generated.resources.Res
 import taxiapp.composeapp.generated.resources.location_permission_button
-import taxiapp.composeapp.generated.resources.location_permission_denied_always
+import taxiapp.composeapp.generated.resources.location_permission_denied_always_description
+import taxiapp.composeapp.generated.resources.location_permission_denied_always_title
+import taxiapp.composeapp.generated.resources.location_permission_denied_description
+import taxiapp.composeapp.generated.resources.location_permission_denied_title
 import taxiapp.composeapp.generated.resources.location_permission_description
+import taxiapp.composeapp.generated.resources.location_permission_low_accuracy_description
+import taxiapp.composeapp.generated.resources.location_permission_low_accuracy_title
 import taxiapp.composeapp.generated.resources.location_permission_settings_button
 import taxiapp.composeapp.generated.resources.location_permission_title
 
@@ -86,12 +94,20 @@ private fun LocationPermissionContent(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center,
         ) {
-            LocationPermissionIllustration()
+            LocationPermissionIllustration(permissionStatus = permissionStatus)
 
             Spacer(modifier = Modifier.height(48.dp))
 
             Text(
-                text = stringResource(Res.string.location_permission_title),
+                text = when (permissionStatus) {
+                    PermissionStatus.DENIED_ALWAYS ->
+                        stringResource(Res.string.location_permission_denied_always_title)
+                    PermissionStatus.LOW_ACCURACY ->
+                        stringResource(Res.string.location_permission_low_accuracy_title)
+                    PermissionStatus.DENIED ->
+                        stringResource(Res.string.location_permission_denied_title)
+                    else -> stringResource(Res.string.location_permission_title)
+                },
                 style = MaterialTheme.typography.headlineSmall,
                 fontWeight = FontWeight.Bold,
                 textAlign = TextAlign.Center,
@@ -101,10 +117,15 @@ private fun LocationPermissionContent(
             Spacer(modifier = Modifier.height(16.dp))
 
             Text(
-                text = if (permissionStatus == PermissionStatus.DENIED_ALWAYS) {
-                    stringResource(Res.string.location_permission_denied_always)
-                } else {
-                    stringResource(Res.string.location_permission_description)
+                text = when (permissionStatus) {
+                    PermissionStatus.DENIED_ALWAYS ->
+                        stringResource(Res.string.location_permission_denied_always_description)
+                    PermissionStatus.LOW_ACCURACY ->
+                        stringResource(Res.string.location_permission_low_accuracy_description)
+                    PermissionStatus.DENIED ->
+                        stringResource(Res.string.location_permission_denied_description)
+                    else ->
+                        stringResource(Res.string.location_permission_description)
                 },
                 style = MaterialTheme.typography.bodyLarge,
                 textAlign = TextAlign.Center,
@@ -140,6 +161,7 @@ private fun LocationPermissionContent(
 
 @Composable
 private fun LocationPermissionIllustration(
+    permissionStatus: PermissionStatus,
     modifier: Modifier = Modifier,
 ) {
     var isStarted by remember {
@@ -162,7 +184,7 @@ private fun LocationPermissionIllustration(
                 .background(MaterialTheme.colorScheme.outlineVariant),
         )
 
-        if (isStarted) {
+        if (isStarted && permissionStatus != PermissionStatus.DENIED_ALWAYS) {
             PulseCircle(
                 modifier = Modifier.size(120.dp),
             )
@@ -171,6 +193,56 @@ private fun LocationPermissionIllustration(
         LocationPin(
             isVisible = isStarted,
             modifier = Modifier.size(48.dp),
+            color = if (permissionStatus == PermissionStatus.DENIED_ALWAYS) {
+                MaterialTheme.colorScheme.outline
+            } else {
+                MaterialTheme.colorScheme.primary
+            }
+        )
+
+        DeniedCross(
+            isVisible = isStarted && permissionStatus == PermissionStatus.DENIED_ALWAYS,
+            modifier = Modifier
+                .size(64.dp)
+                .align(Alignment.Center)
+        )
+    }
+}
+
+@Composable
+private fun DeniedCross(
+    isVisible: Boolean,
+    modifier: Modifier = Modifier
+) {
+    val scale by animateFloatAsState(
+        targetValue = if (isVisible) 1f else 0f,
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioMediumBouncy,
+            stiffness = Spring.StiffnessLow,
+        ),
+    )
+
+    val errorColor = MaterialTheme.colorScheme.error
+    Canvas(
+        modifier = modifier.graphicsLayer {
+            scaleX = scale
+            scaleY = scale
+        }
+    ) {
+        val strokeWidth = 8.dp.toPx()
+        drawLine(
+            color = errorColor,
+            start = Offset(size.width * 0.2f, size.height * 0.2f),
+            end = Offset(size.width * 0.8f, size.height * 0.8f),
+            strokeWidth = strokeWidth,
+            cap = StrokeCap.Round
+        )
+        drawLine(
+            color = errorColor,
+            start = Offset(size.width * 0.8f, size.height * 0.2f),
+            end = Offset(size.width * 0.2f, size.height * 0.8f),
+            strokeWidth = strokeWidth,
+            cap = StrokeCap.Round
         )
     }
 }
@@ -217,6 +289,7 @@ private fun PulseCircle(
 private fun LocationPin(
     isVisible: Boolean,
     modifier: Modifier = Modifier,
+    color: Color = MaterialTheme.colorScheme.primary
 ) {
     val scale by animateFloatAsState(
         targetValue = if (isVisible) 1f else 0f,
@@ -233,7 +306,7 @@ private fun LocationPin(
                 scaleY = scale
             }
             .clip(CircleShape)
-            .background(MaterialTheme.colorScheme.primary),
+            .background(color),
         contentAlignment = Alignment.Center,
     ) {
         Box(
@@ -247,10 +320,43 @@ private fun LocationPin(
 
 @Preview
 @Composable
-private fun LocationPermissionScreenPreview() {
+private fun LocationPermissionInitialPreview() {
+    TaxiAppTheme {
+        LocationPermissionContent(
+            permissionStatus = PermissionStatus.NOT_DETERMINED,
+            onGrantClick = {},
+        )
+    }
+}
+
+@Preview
+@Composable
+private fun LocationPermissionDeniedPreview() {
     TaxiAppTheme {
         LocationPermissionContent(
             permissionStatus = PermissionStatus.DENIED,
+            onGrantClick = {},
+        )
+    }
+}
+
+@Preview
+@Composable
+private fun LocationPermissionDeniedAlwaysPreview() {
+    TaxiAppTheme {
+        LocationPermissionContent(
+            permissionStatus = PermissionStatus.DENIED_ALWAYS,
+            onGrantClick = {},
+        )
+    }
+}
+
+@Preview
+@Composable
+private fun LocationPermissionLowAccuracyPreview() {
+    TaxiAppTheme {
+        LocationPermissionContent(
+            permissionStatus = PermissionStatus.LOW_ACCURACY,
             onGrantClick = {},
         )
     }
