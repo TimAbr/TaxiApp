@@ -4,5 +4,7 @@ enum class PermissionStatus {
     GRANTED,
     DENIED,
     DENIED_ALWAYS,
-    CANCELED
+    CANCELED,
+    NOT_DETERMINED,
+    LOW_ACCURACY
 }
