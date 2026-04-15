@@ -41,6 +41,7 @@ kotlin {
             implementation(libs.androidx.credentials.play.services.auth)
             implementation(libs.googleid)
             implementation(libs.koin.android)
+            implementation(libs.play.services.location)
         }
 
         jvmMain.dependencies {

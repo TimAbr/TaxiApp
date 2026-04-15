@@ -10,8 +10,10 @@ import org.example.project.data.feature.auth.datasources.tokens.local.SettingsTo
 import org.example.project.data.feature.auth.datasources.tokens.local.TokensDataSource
 import org.example.project.data.feature.auth.repositories.AuthRepositoryImpl
 import org.example.project.data.feature.auth.repositories.TokenRepositoryImpl
+import org.example.project.data.feature.location.repository.LocationRepositoryImpl
 import org.example.project.domain.feature.auth.repositories.AuthRepository
 import org.example.project.domain.feature.auth.repositories.TokenRepository
+import org.example.project.domain.feature.location.repository.LocationRepository
 import org.koin.core.module.dsl.singleOf
 import org.koin.core.qualifier.named
 import org.koin.dsl.bind
@@ -44,4 +46,5 @@ val dataModule = module {
     singleOf(::SettingsTokensDataSource) bind TokensDataSource::class
     singleOf(::TokenRepositoryImpl) bind TokenRepository::class
     singleOf(::AuthRepositoryImpl) bind AuthRepository::class
+    singleOf(::LocationRepositoryImpl) bind LocationRepository::class
 }

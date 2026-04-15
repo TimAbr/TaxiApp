@@ -17,8 +17,6 @@ val domainModule = module {
     factoryOf(::ObserveAuthStateUseCase)
     factoryOf(::GetAuthStateUseCase)
 
-    factoryOf(::CheckLocationPermissionUseCase)
-    factoryOf(::RequestLocationPermissionUseCase)
     factoryOf(::GetCurrentLocationUseCase)
     factoryOf(::ObserveLocationUpdatesUseCase)
 }
