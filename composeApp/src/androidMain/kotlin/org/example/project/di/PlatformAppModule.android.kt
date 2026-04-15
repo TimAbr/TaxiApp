@@ -6,8 +6,12 @@ import org.koin.core.module.Module
 import org.koin.dsl.module
 
 actual val platformAppModule: Module = module {
-    single <PermissionManager> {
+    single {
         AndroidPermissionManager()
+    }
+
+    single <PermissionManager> {
+        get<AndroidPermissionManager>()
     }
 }
 
