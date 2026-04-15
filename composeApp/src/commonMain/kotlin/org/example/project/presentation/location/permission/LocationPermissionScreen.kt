@@ -146,16 +146,6 @@ private fun LocationPermissionIllustration(
         mutableStateOf(false)
     }
 
-    val pinScale by animateFloatAsState(
-        targetValue = if (isStarted) 1f else 0f,
-        animationSpec = spring(
-            dampingRatio = Spring.DampingRatioMediumBouncy,
-            stiffness = Spring.StiffnessLow,
-        ),
-    )
-
-    val infiniteTransition = rememberInfiniteTransition()
-
     LaunchedEffect(Unit) {
         delay(300)
         isStarted = true
@@ -165,68 +155,93 @@ private fun LocationPermissionIllustration(
         modifier = modifier.size(200.dp),
         contentAlignment = Alignment.Center,
     ) {
-
         Box(
             modifier = Modifier
                 .size(200.dp)
                 .clip(CircleShape)
                 .background(MaterialTheme.colorScheme.outlineVariant),
-            contentAlignment = Alignment.Center,
-        ) {
+        )
 
-            if (isStarted) {
-                val pulseScale by infiniteTransition.animateFloat(
-                    initialValue = 0f,
-                    targetValue = 1f,
-                    animationSpec = infiniteRepeatable(
-                        animation = tween(2000),
-                        repeatMode = RepeatMode.Restart,
-                    ),
-                )
-
-                val pulseAlpha by infiniteTransition.animateFloat(
-                    initialValue = 1f,
-                    targetValue = 0f,
-                    animationSpec = infiniteRepeatable(
-                        animation = tween(2000),
-                        repeatMode = RepeatMode.Restart,
-                    ),
-                )
-
-                Box(
-                    modifier = Modifier
-                        .size(120.dp)
-                        .graphicsLayer {
-                            scaleX = pulseScale
-                            scaleY = pulseScale
-                            alpha = pulseAlpha
-                        }
-                        .background(
-                            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.4f),
-                            shape = CircleShape,
-                        ),
-                )
-            }
-
-            Box(
-                modifier = Modifier
-                    .size(40.dp)
-                    .graphicsLayer {
-                        scaleX = pinScale
-                        scaleY = pinScale
-                    }
-                    .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.primary),
-                contentAlignment = Alignment.Center,
-            ) {
-                Box(
-                    modifier = Modifier
-                        .size(15.dp)
-                        .clip(CircleShape)
-                        .background(Color.White),
-                )
-            }
+        if (isStarted) {
+            PulseCircle(
+                modifier = Modifier.size(120.dp),
+            )
         }
+
+        LocationPin(
+            isVisible = isStarted,
+            modifier = Modifier.size(48.dp),
+        )
+    }
+}
+
+@Composable
+private fun PulseCircle(
+    modifier: Modifier = Modifier,
+) {
+    val infiniteTransition = rememberInfiniteTransition()
+
+    val scale by infiniteTransition.animateFloat(
+        initialValue = 0f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(2000),
+            repeatMode = RepeatMode.Restart,
+        ),
+    )
+
+    val alpha by infiniteTransition.animateFloat(
+        initialValue = 1f,
+        targetValue = 0f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(2000),
+            repeatMode = RepeatMode.Restart,
+        ),
+    )
+
+    Box(
+        modifier = modifier
+            .graphicsLayer {
+                scaleX = scale
+                scaleY = scale
+                this.alpha = alpha
+            }
+            .background(
+                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.4f),
+                shape = CircleShape,
+            ),
+    )
+}
+
+@Composable
+private fun LocationPin(
+    isVisible: Boolean,
+    modifier: Modifier = Modifier,
+) {
+    val scale by animateFloatAsState(
+        targetValue = if (isVisible) 1f else 0f,
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioMediumBouncy,
+            stiffness = Spring.StiffnessLow,
+        ),
+    )
+
+    Box(
+        modifier = modifier
+            .graphicsLayer {
+                scaleX = scale
+                scaleY = scale
+            }
+            .clip(CircleShape)
+            .background(MaterialTheme.colorScheme.primary),
+        contentAlignment = Alignment.Center,
+    ) {
+        Box(
+            modifier = Modifier
+                .size(18.dp)
+                .clip(CircleShape)
+                .background(Color.White),
+        )
     }
 }
 
