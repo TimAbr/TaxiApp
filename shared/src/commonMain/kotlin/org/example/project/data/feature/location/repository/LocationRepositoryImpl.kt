@@ -10,11 +10,13 @@ import org.example.project.utils.models.Outcome
 class LocationRepositoryImpl(
     private val locationDataSource: LocationDataSource
 ) : LocationRepository {
-    override suspend fun getCurrentLocation(): Outcome<LocationCoordinates, LocationError> {
+    override suspend fun getCurrentLocation(
+    ): Outcome<LocationCoordinates, LocationError> {
         return locationDataSource.getCurrentLocation()
     }
 
-    override fun observeLocationUpdates(): Flow<Outcome<LocationCoordinates, LocationError>> {
+    override fun observeLocationUpdates(
+    ): Flow<Outcome<LocationCoordinates, LocationError>> {
         return locationDataSource.observeLocationUpdates()
     }
 }
