@@ -22,6 +22,18 @@
     <string name="location_permission_low_accuracy_description">Текущая точность недостаточна. Пожалуйста, предоставьте доступ к точному местоположению (Fine Location).</string>
     <string name="location_permission_denied_title">Нужен доступ</string>
     <string name="location_permission_denied_description">Приложению необходим доступ к вашей геопозиции для корректной работы сервиса такси.</string>
+
+    <string name="current_location_title">Ваше местоположение</string>
+    <string name="finding_location">Определяем координаты...</string>
+    <string name="unable_to_find_you">Не удалось вас найти</string>
+    <string name="lat_label">LAT</string>
+    <string name="lon_label">LOT</string>
+
+    <string name="error_no_permission">Нужно разрешение на доступ к геолокации.</string>
+    <string name="error_gps_disabled">GPS выключен. Включите его для точного определения местоположения.</string>
+    <string name="error_timeout">Слабый сигнал. Пытаемся уточнить координаты...</string>
+    <string name="error_service_unavailable">Сервисы геолокации недоступны на этом устройстве.</string>
+    <string name="location_error_unknown">Произошла непредвиденная ошибка. Повторное получение местоположения...</string>
     <string name="location_permission_denied_always">Разрешение отклонено навсегда. Пожалуйста, включите его в настройках.</string>
     <string name="location_permission_settings_button">В настройки</string>
     <string name="ok_button">OK</string>
