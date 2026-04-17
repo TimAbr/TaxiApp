@@ -18,12 +18,17 @@ import com.google.android.gms.location.LocationResult
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority
 import kotlinx.coroutines.CancellableContinuation
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withTimeout
@@ -31,10 +36,9 @@ import org.example.project.domain.feature.location.models.LocationCoordinates
 import org.example.project.domain.feature.location.repository.LocationError
 import org.example.project.utils.models.Outcome
 import kotlin.coroutines.resume
-import kotlin.coroutines.suspendCoroutine
 
 class AndroidLocationDataSource(
-    private val context: Context
+    private val context: Context,
 ) : LocationDataSource {
 
     private val fusedLocationClient by lazy {
@@ -46,52 +50,57 @@ class AndroidLocationDataSource(
     }
 
     private fun isGpsEnabled(): Boolean {
-        return locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER) || locationManager.isProviderEnabled(
-            LocationManager.NETWORK_PROVIDER
-        )
+        return locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER) ||
+            locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER)
     }
 
     private fun hasPermission(): Boolean {
         return ContextCompat.checkSelfPermission(
             context,
-            android.Manifest.permission.ACCESS_FINE_LOCATION
+            android.Manifest.permission.ACCESS_FINE_LOCATION,
         ) == PackageManager.PERMISSION_GRANTED
     }
 
-
     @SuppressLint("MissingPermission")
     override suspend fun getCurrentLocation(): Outcome<LocationCoordinates, LocationError> {
-        if (!hasPermission())
+        if (!hasPermission()) {
             return Outcome.Error(
-                LocationError.NO_PERMISSION
+                LocationError.NO_PERMISSION,
             )
+        }
 
         if (!isGpsEnabled()) {
-            return Outcome.Error(LocationError.GPS_DISABLED)
+            return Outcome.Error(
+                LocationError.GPS_DISABLED,
+            )
         }
 
         return try {
             withTimeout(REQUEST_TIMEOUT) {
                 suspendCancellableCoroutine { continuation ->
-                    fusedLocationClient.lastLocation.addOnSuccessListener { location ->
-                        if (continuation.isActive) {
-                            if (location != null) {
-                                continuation.resume(
-                                    Outcome.Success(
-                                        LocationCoordinates(
-                                            location.latitude, location.longitude
-                                        )
+                    fusedLocationClient.lastLocation
+                        .addOnSuccessListener { location ->
+                            if (continuation.isActive) {
+                                if (location != null) {
+                                    continuation.resume(
+                                        Outcome.Success(
+                                            location.toCoordinates(),
+                                        ),
                                     )
-                                )
-                            } else {
-                                requestSingleUpdate(continuation)
+                                } else {
+                                    requestSingleUpdate(continuation)
+                                }
                             }
                         }
-                    }.addOnFailureListener {
-                        if (continuation.isActive) {
-                            continuation.resume(Outcome.Error(LocationError.UNKNOWN))
+                        .addOnFailureListener {
+                            if (continuation.isActive) {
+                                continuation.resume(
+                                    Outcome.Error(
+                                        LocationError.UNKNOWN,
+                                    ),
+                                )
+                            }
                         }
-                    }
                 }
             }
         } catch (e: TimeoutCancellationException) {
@@ -99,16 +108,15 @@ class AndroidLocationDataSource(
         } catch (e: Exception) {
             Outcome.Error(LocationError.UNKNOWN)
         }
-
     }
 
     @SuppressLint("MissingPermission")
     private fun requestSingleUpdate(
-        continuation: CancellableContinuation<Outcome<LocationCoordinates, LocationError>>
+        continuation: CancellableContinuation<Outcome<LocationCoordinates, LocationError>>,
     ) {
         val request = LocationRequest.Builder(
             Priority.PRIORITY_HIGH_ACCURACY,
-            REQUEST_INTERVAL
+            REQUEST_INTERVAL,
         )
             .setMaxUpdates(1)
             .build()
@@ -119,11 +127,15 @@ class AndroidLocationDataSource(
                 if (continuation.isActive) {
                     if (loc != null) {
                         continuation.resume(
-                            Outcome.Success(loc.toCoordinates())
+                            Outcome.Success(
+                                loc.toCoordinates(),
+                            ),
                         )
                     } else {
                         continuation.resume(
-                            Outcome.Error(LocationError.SERVICE_UNAVAILABLE)
+                            Outcome.Error(
+                                LocationError.SERVICE_UNAVAILABLE,
+                            ),
                         )
                     }
                 }
@@ -133,7 +145,7 @@ class AndroidLocationDataSource(
         fusedLocationClient.requestLocationUpdates(
             request,
             callback,
-            Looper.getMainLooper()
+            Looper.getMainLooper(),
         )
 
         continuation.invokeOnCancellation {
@@ -141,93 +153,111 @@ class AndroidLocationDataSource(
         }
     }
 
-    @SuppressLint("MissingPermission")
-    override fun observeLocationUpdates(): Flow<Outcome<LocationCoordinates, LocationError>> =
-        callbackFlow {
-
-            var timeoutJob: Job? = null
-            var isRequestingUpdates = false
-
-            fun startTimeoutTimer() {
-                timeoutJob?.cancel()
-                timeoutJob = launch {
-                    delay(REQUEST_TIMEOUT)
-                    trySend(Outcome.Error(LocationError.TIMEOUT))
-                }
-            }
-
-            val locationCallback = object : LocationCallback() {
-                override fun onLocationResult(result: LocationResult) {
-                    result.lastLocation?.let { location ->
-                        trySend(
-                            Outcome.Success(
-                                LocationCoordinates(
-                                    location.latitude,
-                                    location.longitude
-                                )
-                            )
-                        )
-                        startTimeoutTimer()
-                    }
-                }
-            }
-
-            fun stopLocationUpdates() {
-                if (isRequestingUpdates) {
-                    fusedLocationClient.removeLocationUpdates(locationCallback)
-                    isRequestingUpdates = false
-                }
-                timeoutJob?.cancel()
-            }
-
-
-            val locationRequest = LocationRequest.Builder(
-                Priority.PRIORITY_HIGH_ACCURACY,
-                REQUEST_INTERVAL
-            )
-                .setMinUpdateIntervalMillis(MIN_REQUEST_INTERVAL)
-                .build()
-
-
-            fun manageUpdatesState() {
-                val error = getStatusError()
-                if (error == null) {
-                    if (!isRequestingUpdates) {
-                        fusedLocationClient.requestLocationUpdates(
-                            locationRequest,
-                            locationCallback,
-                            Looper.getMainLooper()
-                        )
-                        isRequestingUpdates = true
-                        startTimeoutTimer()
-                    }
-                } else {
-                    stopLocationUpdates()
-                    trySend(Outcome.Error(error))
-                }
-            }
-
-            val gpsStatusReceiver = object : BroadcastReceiver() {
-                override fun onReceive(context: Context?, intent: Intent?) {
-                    manageUpdatesState()
-                }
-            }
-            ContextCompat.registerReceiver(
-                context,
-                gpsStatusReceiver,
-                IntentFilter(LocationManager.PROVIDERS_CHANGED_ACTION),
-                ContextCompat.RECEIVER_NOT_EXPORTED
-            )
-
-
-            manageUpdatesState()
-
-            awaitClose {
-                timeoutJob?.cancel()
-                fusedLocationClient.removeLocationUpdates(locationCallback)
-                context.unregisterReceiver(gpsStatusReceiver)
+    private fun providerStatusFlow(): Flow<Unit> = callbackFlow {
+        val receiver = object : BroadcastReceiver() {
+            override fun onReceive(context: Context?, intent: Intent?) {
+                trySend(Unit)
             }
         }
+        val filter = IntentFilter(LocationManager.PROVIDERS_CHANGED_ACTION)
+
+        ContextCompat.registerReceiver(
+            context,
+            receiver,
+            filter,
+            ContextCompat.RECEIVER_NOT_EXPORTED,
+        )
+
+        trySend(Unit)
+        awaitClose {
+            context.unregisterReceiver(receiver)
+        }
+    }
+
+    @SuppressLint("MissingPermission")
+    private fun rawLocationFlow(): Flow<LocationCoordinates> = callbackFlow {
+        val locationRequest = LocationRequest.Builder(
+            Priority.PRIORITY_HIGH_ACCURACY,
+            REQUEST_INTERVAL,
+        )
+            .setMinUpdateIntervalMillis(MIN_REQUEST_INTERVAL)
+            .build()
+
+        val locationCallback = object : LocationCallback() {
+            override fun onLocationResult(result: LocationResult) {
+                result.lastLocation?.let { location ->
+                    trySend(location.toCoordinates())
+                }
+            }
+        }
+
+        fusedLocationClient.requestLocationUpdates(
+            locationRequest,
+            locationCallback,
+            Looper.getMainLooper(),
+        )
+
+        awaitClose {
+            fusedLocationClient.removeLocationUpdates(locationCallback)
+        }
+    }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    override fun observeLocationUpdates(): Flow<Outcome<LocationCoordinates, LocationError>> {
+        return providerStatusFlow()
+            .map { getStatusError() }
+            .distinctUntilChanged()
+            .flatMapLatest { error ->
+                if (error != null) {
+                    flowOf(
+                        Outcome.Error(error),
+                    )
+                } else {
+                    rawLocationFlow()
+                        .map {
+                            Outcome.Success(it)
+                        }
+                        .withTimeoutCheck(
+                            timeoutMillis = REQUEST_TIMEOUT,
+                            error = LocationError.TIMEOUT,
+                        )
+                        .distinctUntilChanged()
+                }
+            }
+    }
+
+    private fun <T> Flow<Outcome<T, LocationError>>.withTimeoutCheck(
+        timeoutMillis: Long,
+        error: LocationError,
+    ): Flow<Outcome<T, LocationError>> = callbackFlow {
+        var timeoutJob: Job? = null
+
+        fun startTimeoutTimer() {
+            timeoutJob?.cancel()
+            timeoutJob = launch {
+                delay(timeoutMillis)
+                trySend(
+                    Outcome.Error(error),
+                )
+            }
+        }
+
+        val collectionJob = launch {
+            collect { value ->
+                trySend(value)
+                if (value is Outcome.Success) {
+                    startTimeoutTimer()
+                }
+            }
+        }
+
+        startTimeoutTimer()
+
+        awaitClose {
+            timeoutJob?.cancel()
+            collectionJob.cancel()
+        }
+    }
 
     private fun getStatusError(): LocationError? {
         val gmsAvailability = GoogleApiAvailability
@@ -235,16 +265,30 @@ class AndroidLocationDataSource(
             .isGooglePlayServicesAvailable(context)
 
         return when {
-            !hasPermission() -> LocationError.NO_PERMISSION
-            !isGpsEnabled() -> LocationError.GPS_DISABLED
-            gmsAvailability != ConnectionResult.SUCCESS -> LocationError.SERVICE_UNAVAILABLE
-            else -> null
+            !hasPermission() -> {
+                LocationError.NO_PERMISSION
+            }
+
+            !isGpsEnabled() -> {
+                LocationError.GPS_DISABLED
+            }
+
+            gmsAvailability != ConnectionResult.SUCCESS -> {
+                LocationError.SERVICE_UNAVAILABLE
+            }
+
+            else -> {
+                null
+            }
         }
     }
 
-    private fun Location.toCoordinates() = LocationCoordinates(latitude, longitude)
+    private fun Location.toCoordinates() = LocationCoordinates(
+        lat = latitude,
+        lon = longitude,
+    )
 
-    companion object{
+    companion object {
         private const val REQUEST_TIMEOUT = 10000L
         private const val REQUEST_INTERVAL = 3000L
         private const val MIN_REQUEST_INTERVAL = 1000L
