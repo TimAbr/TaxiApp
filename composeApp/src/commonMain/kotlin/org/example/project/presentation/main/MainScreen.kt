@@ -37,13 +37,13 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.emptyFlow
 import org.example.project.domain.feature.location.models.LocationCoordinates
 import org.example.project.domain.feature.location.repository.LocationError
 import org.example.project.presentation.theme.TaxiAppTheme
+import org.example.project.utils.annotations.preview.ThemePreviews
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
 import taxiapp.composeapp.generated.resources.Res
@@ -150,7 +150,7 @@ private fun LocationCard(
         modifier = modifier.fillMaxWidth(),
         shape = MaterialTheme.shapes.medium,
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant
+            containerColor = MaterialTheme.colorScheme.outlineVariant
         )
     ) {
         Box(
@@ -215,14 +215,14 @@ private fun CoordinateItem(
         Text(
             text = label,
             style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
         )
         Text(
             text = value.toString(),
             style = MaterialTheme.typography.titleLarge.copy(
                 fontFamily = FontFamily.Monospace,
             ),
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            color = MaterialTheme.colorScheme.onSurface,
         )
     }
 }
@@ -343,7 +343,7 @@ private fun LogoutBottomSheet(
     }
 }
 
-@Preview(name = "Default/Loading")
+@ThemePreviews
 @Composable
 private fun MainScreenPreview() {
     TaxiAppTheme {
@@ -359,7 +359,7 @@ private fun MainScreenPreview() {
     }
 }
 
-@Preview(name = "Success Location")
+@ThemePreviews
 @Composable
 private fun PreviewSuccess() {
     TaxiAppTheme {
@@ -377,7 +377,7 @@ private fun PreviewSuccess() {
     }
 }
 
-@Preview(name = "Location Error")
+@ThemePreviews
 @Composable
 private fun PreviewError() {
     TaxiAppTheme {

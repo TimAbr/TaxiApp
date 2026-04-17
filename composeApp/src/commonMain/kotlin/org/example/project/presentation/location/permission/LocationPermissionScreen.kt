@@ -41,13 +41,13 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlinx.coroutines.delay
 import org.example.project.domain.feature.location.models.PermissionStatus
 import org.example.project.presentation.theme.TaxiAppTheme
+import org.example.project.utils.annotations.preview.ThemePreviews
 import org.jetbrains.compose.resources.stringResource
 import taxiapp.composeapp.generated.resources.Res
 import taxiapp.composeapp.generated.resources.location_permission_button
@@ -129,7 +129,7 @@ private fun LocationPermissionContent(
                 },
                 style = MaterialTheme.typography.bodyLarge,
                 textAlign = TextAlign.Center,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                color = MaterialTheme.colorScheme.onSurface,
                 lineHeight = 24.sp,
             )
 
@@ -318,7 +318,7 @@ private fun LocationPin(
     }
 }
 
-@Preview
+@ThemePreviews
 @Composable
 private fun LocationPermissionInitialPreview() {
     TaxiAppTheme {
@@ -329,7 +329,7 @@ private fun LocationPermissionInitialPreview() {
     }
 }
 
-@Preview
+@ThemePreviews
 @Composable
 private fun LocationPermissionDeniedPreview() {
     TaxiAppTheme {
@@ -340,7 +340,7 @@ private fun LocationPermissionDeniedPreview() {
     }
 }
 
-@Preview
+@ThemePreviews
 @Composable
 private fun LocationPermissionDeniedAlwaysPreview() {
     TaxiAppTheme {
@@ -351,7 +351,7 @@ private fun LocationPermissionDeniedAlwaysPreview() {
     }
 }
 
-@Preview
+@ThemePreviews
 @Composable
 private fun LocationPermissionLowAccuracyPreview() {
     TaxiAppTheme {
