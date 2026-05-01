@@ -39,7 +39,14 @@ actual val platformDataModule: Module = module {
         "http://10.0.2.2:$SERVER_PORT"
     }
 
-    single<LocationDataSource> {
+
+
+    single {
         AndroidLocationDataSource(get())
     }
+
+    single <LocationDataSource>{
+        get<AndroidLocationDataSource>()
+    }
+
 }

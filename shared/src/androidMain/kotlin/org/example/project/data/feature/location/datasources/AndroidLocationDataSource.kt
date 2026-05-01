@@ -18,20 +18,26 @@ import com.google.android.gms.location.LocationResult
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority
 import kotlinx.coroutines.CancellableContinuation
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.shareIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withTimeout
+import org.example.project.data.feature.location.service.LocationService
 import org.example.project.domain.feature.location.models.LocationCoordinates
 import org.example.project.domain.feature.location.repository.LocationError
 import org.example.project.utils.models.Outcome
@@ -41,12 +47,55 @@ class AndroidLocationDataSource(
     private val context: Context,
 ) : LocationDataSource {
 
+    private val dataSourceScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+
     private val fusedLocationClient by lazy {
         LocationServices.getFusedLocationProviderClient(context)
     }
 
     private val locationManager by lazy {
         context.getSystemService(Context.LOCATION_SERVICE) as LocationManager
+    }
+
+    private val sharedLocationFlow = createLocationFlow()
+        .shareIn(
+            scope = dataSourceScope,
+            started = SharingStarted.WhileSubscribed(stopTimeoutMillis = 5000),
+            replay = 1
+        )
+
+    override fun observeLocationUpdates(): Flow<Outcome<LocationCoordinates, LocationError>> {
+        return sharedLocationFlow
+    }
+
+    override fun startBackgroundTracking() {
+        val intent = Intent(context, LocationService::class.java)
+        context.startForegroundService(intent)
+    }
+
+    override fun stopBackgroundTracking() {
+        val intent = Intent(context, LocationService::class.java)
+        context.stopService(intent)
+    }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    private fun createLocationFlow(): Flow<Outcome<LocationCoordinates, LocationError>> {
+        return providerStatusFlow()
+            .map { getStatusError() }
+            .distinctUntilChanged()
+            .flatMapLatest { error ->
+                if (error != null) {
+                    flowOf(Outcome.Error(error))
+                } else {
+                    rawLocationFlow()
+                        .map { Outcome.Success(it) }
+                        .withTimeoutCheck(
+                            timeoutMillis = REQUEST_TIMEOUT,
+                            error = LocationError.TIMEOUT
+                        )
+                }
+            }
+            .distinctUntilChanged()
     }
 
     private fun isGpsEnabled(): Boolean {
@@ -63,17 +112,8 @@ class AndroidLocationDataSource(
 
     @SuppressLint("MissingPermission")
     override suspend fun getCurrentLocation(): Outcome<LocationCoordinates, LocationError> {
-        if (!hasPermission()) {
-            return Outcome.Error(
-                LocationError.NO_PERMISSION,
-            )
-        }
-
-        if (!isGpsEnabled()) {
-            return Outcome.Error(
-                LocationError.GPS_DISABLED,
-            )
-        }
+        if (!hasPermission()) return Outcome.Error(LocationError.NO_PERMISSION)
+        if (!isGpsEnabled()) return Outcome.Error(LocationError.GPS_DISABLED)
 
         return try {
             withTimeout(REQUEST_TIMEOUT) {
@@ -82,11 +122,7 @@ class AndroidLocationDataSource(
                         .addOnSuccessListener { location ->
                             if (continuation.isActive) {
                                 if (location != null) {
-                                    continuation.resume(
-                                        Outcome.Success(
-                                            location.toCoordinates(),
-                                        ),
-                                    )
+                                    continuation.resume(Outcome.Success(location.toCoordinates()))
                                 } else {
                                     requestSingleUpdate(continuation)
                                 }
@@ -94,11 +130,7 @@ class AndroidLocationDataSource(
                         }
                         .addOnFailureListener {
                             if (continuation.isActive) {
-                                continuation.resume(
-                                    Outcome.Error(
-                                        LocationError.UNKNOWN,
-                                    ),
-                                )
+                                continuation.resume(Outcome.Error(LocationError.UNKNOWN))
                             }
                         }
                 }
@@ -114,10 +146,7 @@ class AndroidLocationDataSource(
     private fun requestSingleUpdate(
         continuation: CancellableContinuation<Outcome<LocationCoordinates, LocationError>>,
     ) {
-        val request = LocationRequest.Builder(
-            Priority.PRIORITY_HIGH_ACCURACY,
-            REQUEST_INTERVAL,
-        )
+        val request = LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, REQUEST_INTERVAL)
             .setMaxUpdates(1)
             .build()
 
@@ -126,31 +155,16 @@ class AndroidLocationDataSource(
                 val loc = result.lastLocation
                 if (continuation.isActive) {
                     if (loc != null) {
-                        continuation.resume(
-                            Outcome.Success(
-                                loc.toCoordinates(),
-                            ),
-                        )
+                        continuation.resume(Outcome.Success(loc.toCoordinates()))
                     } else {
-                        continuation.resume(
-                            Outcome.Error(
-                                LocationError.SERVICE_UNAVAILABLE,
-                            ),
-                        )
+                        continuation.resume(Outcome.Error(LocationError.SERVICE_UNAVAILABLE))
                     }
                 }
             }
         }
 
-        fusedLocationClient.requestLocationUpdates(
-            request,
-            callback,
-            Looper.getMainLooper(),
-        )
-
-        continuation.invokeOnCancellation {
-            fusedLocationClient.removeLocationUpdates(callback)
-        }
+        fusedLocationClient.requestLocationUpdates(request, callback, Looper.getMainLooper())
+        continuation.invokeOnCancellation { fusedLocationClient.removeLocationUpdates(callback) }
     }
 
     private fun providerStatusFlow(): Flow<Unit> = callbackFlow {
@@ -160,70 +174,25 @@ class AndroidLocationDataSource(
             }
         }
         val filter = IntentFilter(LocationManager.PROVIDERS_CHANGED_ACTION)
-
-        ContextCompat.registerReceiver(
-            context,
-            receiver,
-            filter,
-            ContextCompat.RECEIVER_NOT_EXPORTED,
-        )
-
+        ContextCompat.registerReceiver(context, receiver, filter, ContextCompat.RECEIVER_NOT_EXPORTED)
         trySend(Unit)
-        awaitClose {
-            context.unregisterReceiver(receiver)
-        }
+        awaitClose { context.unregisterReceiver(receiver) }
     }
 
     @SuppressLint("MissingPermission")
     private fun rawLocationFlow(): Flow<LocationCoordinates> = callbackFlow {
-        val locationRequest = LocationRequest.Builder(
-            Priority.PRIORITY_HIGH_ACCURACY,
-            REQUEST_INTERVAL,
-        )
+        val locationRequest = LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, REQUEST_INTERVAL)
             .setMinUpdateIntervalMillis(MIN_REQUEST_INTERVAL)
             .build()
 
         val locationCallback = object : LocationCallback() {
             override fun onLocationResult(result: LocationResult) {
-                result.lastLocation?.let { location ->
-                    trySend(location.toCoordinates())
-                }
+                result.lastLocation?.let { trySend(it.toCoordinates()) }
             }
         }
 
-        fusedLocationClient.requestLocationUpdates(
-            locationRequest,
-            locationCallback,
-            Looper.getMainLooper(),
-        )
-
-        awaitClose {
-            fusedLocationClient.removeLocationUpdates(locationCallback)
-        }
-    }
-
-    @OptIn(ExperimentalCoroutinesApi::class)
-    override fun observeLocationUpdates(): Flow<Outcome<LocationCoordinates, LocationError>> {
-        return providerStatusFlow()
-            .map { getStatusError() }
-            .distinctUntilChanged()
-            .flatMapLatest { error ->
-                if (error != null) {
-                    flowOf(
-                        Outcome.Error(error),
-                    )
-                } else {
-                    rawLocationFlow()
-                        .map {
-                            Outcome.Success(it)
-                        }
-                        .withTimeoutCheck(
-                            timeoutMillis = REQUEST_TIMEOUT,
-                            error = LocationError.TIMEOUT,
-                        )
-                        .distinctUntilChanged()
-                }
-            }
+        fusedLocationClient.requestLocationUpdates(locationRequest, locationCallback, Looper.getMainLooper())
+        awaitClose { fusedLocationClient.removeLocationUpdates(locationCallback) }
     }
 
     private fun <T> Flow<Outcome<T, LocationError>>.withTimeoutCheck(
@@ -236,23 +205,18 @@ class AndroidLocationDataSource(
             timeoutJob?.cancel()
             timeoutJob = launch {
                 delay(timeoutMillis)
-                trySend(
-                    Outcome.Error(error),
-                )
+                trySend(Outcome.Error(error))
             }
         }
 
         val collectionJob = launch {
             collect { value ->
                 trySend(value)
-                if (value is Outcome.Success) {
-                    startTimeoutTimer()
-                }
+                if (value is Outcome.Success) startTimeoutTimer()
             }
         }
 
         startTimeoutTimer()
-
         awaitClose {
             timeoutJob?.cancel()
             collectionJob.cancel()
@@ -260,33 +224,16 @@ class AndroidLocationDataSource(
     }
 
     private fun getStatusError(): LocationError? {
-        val gmsAvailability = GoogleApiAvailability
-            .getInstance()
-            .isGooglePlayServicesAvailable(context)
-
+        val gmsAvailability = GoogleApiAvailability.getInstance().isGooglePlayServicesAvailable(context)
         return when {
-            !hasPermission() -> {
-                LocationError.NO_PERMISSION
-            }
-
-            !isGpsEnabled() -> {
-                LocationError.GPS_DISABLED
-            }
-
-            gmsAvailability != ConnectionResult.SUCCESS -> {
-                LocationError.SERVICE_UNAVAILABLE
-            }
-
-            else -> {
-                null
-            }
+            !hasPermission() -> LocationError.NO_PERMISSION
+            !isGpsEnabled() -> LocationError.GPS_DISABLED
+            gmsAvailability != ConnectionResult.SUCCESS -> LocationError.SERVICE_UNAVAILABLE
+            else -> null
         }
     }
 
-    private fun Location.toCoordinates() = LocationCoordinates(
-        lat = latitude,
-        lon = longitude,
-    )
+    private fun Location.toCoordinates() = LocationCoordinates(lat = latitude, lon = longitude)
 
     companion object {
         private const val REQUEST_TIMEOUT = 10000L

@@ -19,4 +19,12 @@ class LocationRepositoryImpl(
     ): Flow<Outcome<LocationCoordinates, LocationError>> {
         return locationDataSource.observeLocationUpdates()
     }
+
+    override fun startBackgroundTracking() {
+        locationDataSource.startBackgroundTracking()
+    }
+
+    override fun stopBackgroundTracking() {
+        locationDataSource.stopBackgroundTracking()
+    }
 }

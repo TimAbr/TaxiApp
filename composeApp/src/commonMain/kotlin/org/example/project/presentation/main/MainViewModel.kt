@@ -15,12 +15,16 @@ import org.example.project.domain.feature.auth.usecases.ObserveAuthStateUseCase
 import org.example.project.domain.feature.location.models.LocationCoordinates
 import org.example.project.domain.feature.location.repository.LocationError
 import org.example.project.domain.feature.location.usecases.ObserveLocationUpdatesUseCase
+import org.example.project.domain.feature.location.usecases.StartBackgroundLocationTrackingUseCase
+import org.example.project.domain.feature.location.usecases.StopBackgroundLocationTrackingUseCase
 import org.example.project.utils.models.Outcome
 
 class MainViewModel(
     private val logoutUseCase: LogoutUseCase,
     private val observeLocationUpdatesUseCase: ObserveLocationUpdatesUseCase,
     private val observeAuthStateUseCase: ObserveAuthStateUseCase,
+    private val startBackgroundLocationTrackingUseCase: StartBackgroundLocationTrackingUseCase,
+    private val stopBackgroundLocationTrackingUseCase: StopBackgroundLocationTrackingUseCase,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(MainScreenState())
@@ -54,6 +58,8 @@ class MainViewModel(
                 }
             }
         }
+
+        startBackgroundLocationTrackingUseCase()
     }
 
     fun showLogoutConfirmation() {

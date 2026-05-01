@@ -14,4 +14,8 @@ class StubLocationDataSource : LocationDataSource {
     override fun observeLocationUpdates(): Flow<Outcome<LocationCoordinates, LocationError>> = flow {
         emit(Outcome.Error(LocationError.SERVICE_UNAVAILABLE))
     }
+
+    override fun startBackgroundTracking() {}
+
+    override fun stopBackgroundTracking() {}
 }
