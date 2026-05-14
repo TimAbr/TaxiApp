@@ -22,8 +22,6 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -46,33 +44,22 @@ import taxiapp.composeapp.generated.resources.error_server
 import taxiapp.composeapp.generated.resources.error_canceled
 import taxiapp.composeapp.generated.resources.error_no_credentials
 import taxiapp.composeapp.generated.resources.error_unknown
+import taxiapp.composeapp.generated.resources.google_logo_content_description
+import taxiapp.composeapp.generated.resources.ok_button
 
 @Composable
 fun AuthScreen(
-    viewModel: AuthViewModel,
+    state: AuthScreenState,
+    onLoginClick: () -> Unit,
+    onClearError: () -> Unit,
     onNavigateToMain: () -> Unit,
 ) {
-    val state by viewModel.state.collectAsState()
-
     LaunchedEffect(state) {
         if (state is AuthScreenState.Authorized) {
             onNavigateToMain()
         }
     }
 
-    AuthScreenContent(
-        state = state,
-        onLoginClick = viewModel::loginWithGoogle,
-        onClearError = viewModel::clearError,
-    )
-}
-
-@Composable
-private fun AuthScreenContent(
-    state: AuthScreenState,
-    onLoginClick: () -> Unit,
-    onClearError: () -> Unit,
-) {
     Scaffold { padding ->
         when (state) {
             is AuthScreenState.Loading -> {
@@ -132,7 +119,7 @@ private fun AuthContent(
         ) {
             Image(
                 painter = painterResource(Res.drawable.google_logo),
-                contentDescription = "Google Logo",
+                contentDescription = stringResource(Res.string.google_logo_content_description),
                 modifier = Modifier.size(140.dp),
                 colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.outlineVariant),
             )
@@ -195,7 +182,7 @@ private fun AuthErrorDialog(
                 onClick = onDismiss,
             ) {
                 Text(
-                    text = "OK",
+                    text = stringResource(Res.string.ok_button),
                     style = MaterialTheme.typography.labelLarge,
                 )
             }
@@ -223,10 +210,11 @@ private fun AuthLoginError.toErrorMessage(): String = when (this) {
 @Composable
 private fun AuthScreenPreview() {
     TaxiAppTheme {
-        AuthScreenContent(
+        AuthScreen(
             state = AuthScreenState.LogIn,
             onLoginClick = {},
             onClearError = {},
+            onNavigateToMain = {},
         )
     }
 }

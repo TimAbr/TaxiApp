@@ -22,16 +22,12 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SheetState
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -39,6 +35,8 @@ import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.emptyFlow
 import org.example.project.presentation.theme.TaxiAppTheme
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
@@ -52,31 +50,20 @@ import taxiapp.composeapp.generated.resources.main_screen_placeholder
 
 @Composable
 fun MainScreen(
-    viewModel: MainViewModel,
+    state: MainScreenState,
+    events: Flow<MainEvent>,
     onLogoutSuccess: () -> Unit,
+    onLogoutRequest: () -> Unit,
+    onLogoutConfirm: () -> Unit,
+    onLogoutDismiss: () -> Unit,
 ) {
     LaunchedEffect(Unit) {
-        viewModel.events.collect { event ->
+        events.collect { event ->
             when (event) {
-                is MainViewModel.MainEvent.LogoutSuccess -> onLogoutSuccess()
+                is MainEvent.LogoutSuccess -> onLogoutSuccess()
             }
         }
     }
-
-    MainScreenContent(
-        onLogoutClick = viewModel::logout,
-    )
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun MainScreenContent(
-    onLogoutClick: () -> Unit,
-) {
-    var showBottomSheet by remember {
-        mutableStateOf(false)
-    }
-    val sheetState = rememberModalBottomSheetState()
 
     Scaffold { padding ->
         Box(
@@ -102,112 +89,117 @@ private fun MainScreenContent(
                         interactionSource = remember { MutableInteractionSource() },
                         indication = ripple(bounded = true),
                     ) {
-                        showBottomSheet = true
+                        onLogoutRequest()
                     },
                 contentAlignment = Alignment.Center,
             ) {
                 Image(
                     painter = painterResource(Res.drawable.google_logo),
-                    contentDescription = "Logout",
+                    contentDescription = stringResource(Res.string.logout_button),
                     modifier = Modifier.size(32.dp),
                     colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.outlineVariant),
                 )
             }
         }
 
-        if (showBottomSheet) {
-            LogoutBottomSheet(
-                sheetState = sheetState,
-                onLogout = onLogoutClick,
-                onDismiss = {
-                    showBottomSheet = false
-                },
-            )
-        }
+        LogoutBottomSheet(
+            state = state.sheetState,
+            onLogout = onLogoutConfirm,
+            onDismiss = onLogoutDismiss,
+        )
     }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun LogoutBottomSheet(
-    sheetState: SheetState,
+    state: MainSheetState,
     onLogout: () -> Unit,
     onDismiss: () -> Unit,
 ) {
-    ModalBottomSheet(
-        onDismissRequest = onDismiss,
-        sheetState = sheetState,
-        containerColor = MaterialTheme.colorScheme.surface,
-        dragHandle = null,
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(24.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
+    val sheetState = rememberModalBottomSheetState()
+
+    LaunchedEffect(state) {
+        if (state is MainSheetState.LogoutConfirmation) {
+            sheetState.show()
+        } else {
+            sheetState.hide()
+        }
+    }
+
+    if (sheetState.isVisible || state is MainSheetState.LogoutConfirmation) {
+        ModalBottomSheet(
+            onDismissRequest = onDismiss,
+            sheetState = sheetState,
+            containerColor = MaterialTheme.colorScheme.surface,
+            dragHandle = null,
         ) {
-            Spacer(modifier = Modifier.height(16.dp))
-
-            Text(
-                text = stringResource(Res.string.logout_confirm_title),
-                style = MaterialTheme.typography.titleLarge,
-                textAlign = TextAlign.Center,
-            )
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            Text(
-                text = stringResource(Res.string.logout_confirm_message),
-                style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                textAlign = TextAlign.Center,
-            )
-
-            Spacer(modifier = Modifier.height(32.dp))
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(24.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
             ) {
-                ElevatedButton(
-                    onClick = {
-                        onLogout()
-                        onDismiss()
-                    },
-                    modifier = Modifier
-                        .weight(1f)
-                        .height(56.dp),
-                    shape = RoundedCornerShape(16.dp),
-                    colors = ButtonDefaults.elevatedButtonColors(
-                        containerColor = MaterialTheme.colorScheme.error,
-                        contentColor = MaterialTheme.colorScheme.onError,
-                    ),
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Text(
+                    text = stringResource(Res.string.logout_confirm_title),
+                    style = MaterialTheme.typography.titleLarge,
+                    textAlign = TextAlign.Center,
+                )
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                Text(
+                    text = stringResource(Res.string.logout_confirm_message),
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    textAlign = TextAlign.Center,
+                )
+
+                Spacer(modifier = Modifier.height(32.dp))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
-                    Text(
-                        text = stringResource(Res.string.logout_button),
-                        style = MaterialTheme.typography.labelLarge,
-                    )
+                    ElevatedButton(
+                        onClick = onLogout,
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(56.dp),
+                        shape = RoundedCornerShape(16.dp),
+                        colors = ButtonDefaults.elevatedButtonColors(
+                            containerColor = MaterialTheme.colorScheme.error,
+                            contentColor = MaterialTheme.colorScheme.onError,
+                        ),
+                    ) {
+                        Text(
+                            text = stringResource(Res.string.logout_button),
+                            style = MaterialTheme.typography.labelLarge,
+                        )
+                    }
+
+                    ElevatedButton(
+                        onClick = onDismiss,
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(56.dp),
+                        shape = RoundedCornerShape(16.dp),
+                        colors = ButtonDefaults.elevatedButtonColors(
+                            containerColor = MaterialTheme.colorScheme.surface,
+                            contentColor = MaterialTheme.colorScheme.onSurface,
+                        ),
+                    ) {
+                        Text(
+                            text = stringResource(Res.string.cancel_button),
+                            style = MaterialTheme.typography.labelLarge,
+                        )
+                    }
                 }
 
-                ElevatedButton(
-                    onClick = onDismiss,
-                    modifier = Modifier
-                        .weight(1f)
-                        .height(56.dp),
-                    shape = RoundedCornerShape(16.dp),
-                    colors = ButtonDefaults.elevatedButtonColors(
-                        containerColor = MaterialTheme.colorScheme.surface,
-                        contentColor = MaterialTheme.colorScheme.onSurface,
-                    ),
-                ) {
-                    Text(
-                        text = stringResource(Res.string.cancel_button),
-                        style = MaterialTheme.typography.labelLarge,
-                    )
-                }
+                Spacer(modifier = Modifier.height(16.dp))
             }
-
-            Spacer(modifier = Modifier.height(16.dp))
         }
     }
 }
@@ -216,8 +208,13 @@ private fun LogoutBottomSheet(
 @Composable
 private fun MainScreenPreview() {
     TaxiAppTheme {
-        MainScreenContent(
-            onLogoutClick = {},
+        MainScreen(
+            state = MainScreenState(),
+            events = emptyFlow(),
+            onLogoutSuccess = {},
+            onLogoutRequest = {},
+            onLogoutConfirm = {},
+            onLogoutDismiss = {},
         )
     }
 }
