@@ -44,22 +44,19 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlinx.coroutines.delay
 import org.example.project.domain.feature.location.models.PermissionStatus
 import org.example.project.presentation.theme.TaxiAppTheme
 import org.example.project.utils.annotations.preview.ThemePreviews
-import org.jetbrains.compose.resources.stringResource
 
 private const val ANIMATION_START_DELAY = 300L
 
 @Composable
 fun LocationPermissionScreen(
-    viewModel: LocationPermissionViewModel,
+    permissionStatus: PermissionStatus,
+    onGrantClick: () -> Unit,
     onNavigate: () -> Unit,
 ) {
-    val permissionStatus by viewModel.permissionStatus.collectAsStateWithLifecycle()
-
     LaunchedEffect(permissionStatus) {
         if (permissionStatus == PermissionStatus.GRANTED) {
             onNavigate()
@@ -68,7 +65,7 @@ fun LocationPermissionScreen(
 
     LocationPermissionContent(
         permissionStatus = permissionStatus,
-        onGrantClick = viewModel::requestPermission,
+        onGrantClick = onGrantClick,
     )
 }
 
@@ -91,7 +88,7 @@ private fun LocationPermissionContent(
             Spacer(modifier = Modifier.height(48.dp))
 
             Text(
-                text = stringResource(permissionStatus.titleRes),
+                text = permissionStatus.toTitle(),
                 style = MaterialTheme.typography.headlineSmall,
                 fontWeight = FontWeight.Bold,
                 textAlign = TextAlign.Center,
@@ -101,7 +98,7 @@ private fun LocationPermissionContent(
             Spacer(modifier = Modifier.height(16.dp))
 
             Text(
-                text = stringResource(permissionStatus.descriptionRes),
+                text = permissionStatus.toDescription(),
                 style = MaterialTheme.typography.bodyLarge,
                 textAlign = TextAlign.Center,
                 color = MaterialTheme.colorScheme.onSurface,
@@ -122,7 +119,7 @@ private fun LocationPermissionContent(
                 ),
             ) {
                 Text(
-                    text = stringResource(permissionStatus.buttonTextRes),
+                    text = permissionStatus.toButtonText(),
                     style = MaterialTheme.typography.titleMedium,
                 )
             }

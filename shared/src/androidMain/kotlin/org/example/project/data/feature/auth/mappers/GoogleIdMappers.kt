@@ -11,7 +11,7 @@ import org.example.project.domain.feature.auth.repositories.AuthLoginError
 fun Exception.toGoogleAuthLoginError(): AuthLoginError {
     return when (this) {
 
-        is GetCredentialCancellationException -> AuthLoginError.GoogleAuthError.Cancelled
+        is GetCredentialCancellationException -> AuthLoginError.Canceled
 
         is NoCredentialException -> AuthLoginError.GoogleAuthError.NoCredentials
 

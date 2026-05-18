@@ -25,6 +25,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SheetState
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.material3.ripple
@@ -49,18 +50,14 @@ import org.jetbrains.compose.resources.stringResource
 import taxiapp.composeapp.generated.resources.Res
 import taxiapp.composeapp.generated.resources.cancel_button
 import taxiapp.composeapp.generated.resources.current_location_title
-import taxiapp.composeapp.generated.resources.error_gps_disabled
-import taxiapp.composeapp.generated.resources.error_no_permission
-import taxiapp.composeapp.generated.resources.error_service_unavailable
-import taxiapp.composeapp.generated.resources.error_timeout
 import taxiapp.composeapp.generated.resources.finding_location
 import taxiapp.composeapp.generated.resources.google_logo
 import taxiapp.composeapp.generated.resources.lat_label
-import taxiapp.composeapp.generated.resources.location_error_unknown
 import taxiapp.composeapp.generated.resources.logout_button
 import taxiapp.composeapp.generated.resources.logout_confirm_message
 import taxiapp.composeapp.generated.resources.logout_confirm_title
 import taxiapp.composeapp.generated.resources.lon_label
+import taxiapp.composeapp.generated.resources.logout_content_description
 
 @Composable
 fun MainScreen(
@@ -76,7 +73,6 @@ fun MainScreen(
         events.collect { event ->
             when (event) {
                 is MainEvent.LogoutSuccess -> onLogoutSuccess()
-                is MainEvent.NavigateToLogin -> onLogoutSuccess()
             }
         }
     }
@@ -97,7 +93,7 @@ fun MainScreen(
                 modifier = Modifier
                     .align(Alignment.Center)
                     .padding(horizontal = 16.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
+                horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 LocationCard(
                     location = state.location,
@@ -105,6 +101,7 @@ fun MainScreen(
 
                 if (state.locationError != null) {
                     Spacer(modifier = Modifier.height(16.dp))
+
                     ErrorMessage(error = state.locationError)
                 }
             }
@@ -113,7 +110,7 @@ fun MainScreen(
                 modifier = Modifier
                     .align(Alignment.TopStart)
                     .padding(16.dp)
-                    .size(48.dp)
+                    .size(50.dp)
                     .clip(CircleShape)
                     .background(MaterialTheme.colorScheme.surface)
                     .clickable(
@@ -126,8 +123,8 @@ fun MainScreen(
             ) {
                 Image(
                     painter = painterResource(Res.drawable.google_logo),
-                    contentDescription = stringResource(Res.string.logout_button),
-                    modifier = Modifier.size(32.dp),
+                    contentDescription = stringResource(Res.string.logout_content_description),
+                    modifier = Modifier.size(40.dp),
                     colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.outlineVariant),
                 )
             }
@@ -143,60 +140,58 @@ fun MainScreen(
 
 @Composable
 private fun LocationCard(
-    location: LocationCoordinates?,
-    modifier: Modifier = Modifier
+    location: Location,
+    modifier: Modifier = Modifier,
 ) {
     Card(
-        modifier = modifier.fillMaxWidth(),
+        modifier = modifier
+            .fillMaxWidth(),
         shape = MaterialTheme.shapes.medium,
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.outlineVariant
-        )
+            containerColor = MaterialTheme.colorScheme.outlineVariant,
+        ),
     ) {
-        Box(
+        Column(
             modifier = Modifier
                 .padding(16.dp)
                 .fillMaxWidth(),
-            contentAlignment = Alignment.Center
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center,
         ) {
-            if (location != null) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text(
-                        text = stringResource(Res.string.current_location_title),
-                        style = MaterialTheme.typography.headlineMedium,
-                        color = MaterialTheme.colorScheme.primary,
-                        textAlign = TextAlign.Center
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-                    CoordinateItem(
-                        label = stringResource(Res.string.lat_label),
-                        value = location.lat,
-                    )
-                    Box(
-                        modifier = Modifier
-                            .size(32.dp, 1.dp)
-                            .background(MaterialTheme.colorScheme.outlineVariant)
-                    )
-                    CoordinateItem(
-                        label = stringResource(Res.string.lon_label),
-                        value = location.lon,
-                    )
-                }
+            if (location is Location.Precise) {
+                Text(
+                    text = stringResource(Res.string.current_location_title),
+                    style = MaterialTheme.typography.headlineMedium,
+                    color = MaterialTheme.colorScheme.primary,
+                    textAlign = TextAlign.Center,
+                )
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                CoordinateItem(
+                    label = stringResource(Res.string.lat_label),
+                    value = location.coordinates.lat,
+                )
+
+                CoordinateItem(
+                    label = stringResource(Res.string.lon_label),
+                    value = location.coordinates.lon,
+                )
             } else {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.size(32.dp),
-                        color = MaterialTheme.colorScheme.primary,
-                        strokeWidth = 3.dp
-                    )
-                    Spacer(modifier = Modifier.height(12.dp))
-                    Text(
-                        text = stringResource(Res.string.finding_location),
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        textAlign = TextAlign.Center
-                    )
-                }
+                CircularProgressIndicator(
+                    modifier = Modifier.size(32.dp),
+                    color = MaterialTheme.colorScheme.primary,
+                    strokeWidth = 3.dp,
+                )
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                Text(
+                    text = stringResource(Res.string.finding_location),
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    textAlign = TextAlign.Center,
+                )
             }
         }
     }
@@ -206,17 +201,18 @@ private fun LocationCard(
 private fun CoordinateItem(
     label: String,
     value: Double,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     Column(
         modifier = modifier,
-        horizontalAlignment = Alignment.CenterHorizontally
+        horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Text(
             text = label,
             style = MaterialTheme.typography.labelSmall,
             color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
         )
+
         Text(
             text = value.toString(),
             style = MaterialTheme.typography.titleLarge.copy(
@@ -230,22 +226,14 @@ private fun CoordinateItem(
 @Composable
 private fun ErrorMessage(
     error: LocationError,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
-    val messageRes = when (error) {
-        LocationError.GPS_DISABLED -> Res.string.error_gps_disabled
-        LocationError.TIMEOUT -> Res.string.error_timeout
-        LocationError.SERVICE_UNAVAILABLE -> Res.string.error_service_unavailable
-        LocationError.UNKNOWN -> Res.string.location_error_unknown
-        LocationError.NO_PERMISSION -> Res.string.error_no_permission
-    }
-
     Text(
-        text = stringResource(messageRes),
+        text = error.toErrorMessage(),
         color = MaterialTheme.colorScheme.error,
         textAlign = TextAlign.Center,
         style = MaterialTheme.typography.bodyMedium,
-        modifier = modifier.fillMaxWidth()
+        modifier = modifier.fillMaxWidth(),
     )
 }
 
@@ -365,7 +353,12 @@ private fun PreviewSuccess() {
     TaxiAppTheme {
         MainScreen(
             state = MainScreenState(
-                location = LocationCoordinates(55.755829, 37.617299)
+                location = Location.Precise(
+                    coordinates = LocationCoordinates(
+                        lat = 55.755829,
+                        lon = 37.617299,
+                    )
+                )
             ),
             events = emptyFlow(),
             onLogoutSuccess = {},

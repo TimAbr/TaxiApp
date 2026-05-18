@@ -10,7 +10,6 @@ import org.example.project.presentation.auth.AuthScreen
 import org.example.project.presentation.auth.AuthViewModel
 import org.example.project.presentation.location.permission.LocationPermissionScreen
 import org.example.project.presentation.location.permission.LocationPermissionViewModel
-import org.example.project.presentation.main.MainEvent
 import org.example.project.presentation.main.MainScreen
 import org.example.project.presentation.main.MainViewModel
 import org.koin.compose.viewmodel.koinViewModel
@@ -27,13 +26,17 @@ fun NavGraph(
     ) {
         composable<Screen.LocationPermission> {
             val viewModel: LocationPermissionViewModel = koinViewModel()
+            val permissionStatus by viewModel.permissionStatus.collectAsState()
 
             LocationPermissionScreen(
-                viewModel = viewModel,
+                permissionStatus = permissionStatus,
+                onGrantClick = { viewModel.requestPermission() },
                 onNavigate = {
-                    navController.navigate(Screen.Auth) {
-                        popUpTo(Screen.LocationPermission) {
-                            inclusive = true
+                    if (!navController.popBackStack()) {
+                        navController.navigate(Screen.Auth) {
+                            popUpTo(Screen.LocationPermission) {
+                                inclusive = true
+                            }
                         }
                     }
                 },
