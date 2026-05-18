@@ -36,6 +36,7 @@ kotlin {
             implementation(libs.kotlin.test)
         }
         androidMain.dependencies {
+            implementation(libs.androidx.core.ktx)
             implementation(libs.androidx.security.crypto)
             implementation(libs.androidx.credentials)
             implementation(libs.androidx.credentials.play.services.auth)
