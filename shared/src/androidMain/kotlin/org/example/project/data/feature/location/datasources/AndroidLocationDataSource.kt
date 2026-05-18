@@ -29,11 +29,13 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.shareIn
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withTimeout
@@ -70,7 +72,7 @@ class AndroidLocationDataSource(
 
     override fun startBackgroundTracking() {
         val intent = Intent(context, LocationService::class.java)
-        context.startForegroundService(intent)
+        ContextCompat.startForegroundService(context, intent)
     }
 
     override fun stopBackgroundTracking() {
@@ -88,7 +90,16 @@ class AndroidLocationDataSource(
                     flowOf(Outcome.Error(error))
                 } else {
                     rawLocationFlow()
-                        .map { Outcome.Success(it) }
+                        .map<LocationCoordinates, Outcome<LocationCoordinates, LocationError>> { 
+                            Outcome.Success(it) 
+                        }
+                        .catch { e ->
+                            if (e is SecurityException) {
+                                emit(Outcome.Error(LocationError.NO_PERMISSION))
+                            } else {
+                                throw e
+                            }
+                        }
                         .withTimeoutCheck(
                             timeoutMillis = REQUEST_TIMEOUT,
                             error = LocationError.TIMEOUT
@@ -175,12 +186,19 @@ class AndroidLocationDataSource(
         }
         val filter = IntentFilter(LocationManager.PROVIDERS_CHANGED_ACTION)
         ContextCompat.registerReceiver(context, receiver, filter, ContextCompat.RECEIVER_NOT_EXPORTED)
+        
         trySend(Unit)
-        awaitClose { context.unregisterReceiver(receiver) }
+        awaitClose { 
+            context.unregisterReceiver(receiver)
+        }
     }
 
     @SuppressLint("MissingPermission")
     private fun rawLocationFlow(): Flow<LocationCoordinates> = callbackFlow {
+        if (!hasPermission()) {
+            throw SecurityException("Location permission missing")
+        }
+
         val locationRequest = LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, REQUEST_INTERVAL)
             .setMinUpdateIntervalMillis(MIN_REQUEST_INTERVAL)
             .build()
@@ -192,6 +210,8 @@ class AndroidLocationDataSource(
         }
 
         fusedLocationClient.requestLocationUpdates(locationRequest, locationCallback, Looper.getMainLooper())
+            .addOnFailureListener { e -> close(e) }
+
         awaitClose { fusedLocationClient.removeLocationUpdates(locationCallback) }
     }
 

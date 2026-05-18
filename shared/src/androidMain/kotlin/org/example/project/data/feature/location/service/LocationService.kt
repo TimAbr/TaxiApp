@@ -6,9 +6,11 @@ import android.app.NotificationManager
 import android.app.Service
 import android.content.Context
 import android.content.Intent
+import android.content.pm.ServiceInfo
 import android.os.Build
 import android.os.IBinder
 import androidx.core.app.NotificationCompat
+import androidx.core.app.ServiceCompat
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -18,6 +20,7 @@ import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import org.example.project.data.feature.location.datasources.AndroidLocationDataSource
 import org.koin.android.ext.android.inject
+import org.example.project.shared.R
 
 class LocationService : Service() {
 
@@ -33,12 +36,18 @@ class LocationService : Service() {
     private fun startForegroundService() {
         createNotificationChannel()
         val notification = createNotification()
-        startForeground(NOTIFICATION_ID, notification)
+        
+        ServiceCompat.startForeground(
+            this,
+            NOTIFICATION_ID,
+            notification,
+            ServiceInfo.FOREGROUND_SERVICE_TYPE_LOCATION
+        )
         
         if (trackingJob == null) {
             trackingJob = dataSource.observeLocationUpdates()
                 .onEach { outcome ->
-                    
+
                 }
                 .launchIn(serviceScope)
         }
@@ -46,8 +55,8 @@ class LocationService : Service() {
 
     private fun createNotification(): Notification {
         return NotificationCompat.Builder(this, CHANNEL_ID)
-            .setContentTitle("Taxi App")
-            .setContentText("Active background tracking is enabled")
+            .setContentTitle(getString(R.string.location_notification_title))
+            .setContentText(getString(R.string.location_notification_text))
             .setSmallIcon(android.R.drawable.ic_menu_mylocation)
             .setOngoing(true)
             .setCategory(Notification.CATEGORY_SERVICE)
@@ -58,10 +67,10 @@ class LocationService : Service() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val channel = NotificationChannel(
                 CHANNEL_ID,
-                "Location Tracking",
+                getString(R.string.location_tracking_channel_name),
                 NotificationManager.IMPORTANCE_LOW,
             )
-            val manager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+            val manager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
             manager.createNotificationChannel(channel)
         }
     }
