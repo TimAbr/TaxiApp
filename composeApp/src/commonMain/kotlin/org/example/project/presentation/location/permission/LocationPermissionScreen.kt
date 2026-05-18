@@ -1,5 +1,6 @@
 package org.example.project.presentation.location.permission
 
+import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloat
@@ -34,7 +35,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
@@ -49,17 +50,8 @@ import org.example.project.domain.feature.location.models.PermissionStatus
 import org.example.project.presentation.theme.TaxiAppTheme
 import org.example.project.utils.annotations.preview.ThemePreviews
 import org.jetbrains.compose.resources.stringResource
-import taxiapp.composeapp.generated.resources.Res
-import taxiapp.composeapp.generated.resources.location_permission_button
-import taxiapp.composeapp.generated.resources.location_permission_denied_always_description
-import taxiapp.composeapp.generated.resources.location_permission_denied_always_title
-import taxiapp.composeapp.generated.resources.location_permission_denied_description
-import taxiapp.composeapp.generated.resources.location_permission_denied_title
-import taxiapp.composeapp.generated.resources.location_permission_description
-import taxiapp.composeapp.generated.resources.location_permission_low_accuracy_description
-import taxiapp.composeapp.generated.resources.location_permission_low_accuracy_title
-import taxiapp.composeapp.generated.resources.location_permission_settings_button
-import taxiapp.composeapp.generated.resources.location_permission_title
+
+private const val ANIMATION_START_DELAY = 300L
 
 @Composable
 fun LocationPermissionScreen(
@@ -99,15 +91,7 @@ private fun LocationPermissionContent(
             Spacer(modifier = Modifier.height(48.dp))
 
             Text(
-                text = when (permissionStatus) {
-                    PermissionStatus.DENIED_ALWAYS ->
-                        stringResource(Res.string.location_permission_denied_always_title)
-                    PermissionStatus.LOW_ACCURACY ->
-                        stringResource(Res.string.location_permission_low_accuracy_title)
-                    PermissionStatus.DENIED ->
-                        stringResource(Res.string.location_permission_denied_title)
-                    else -> stringResource(Res.string.location_permission_title)
-                },
+                text = stringResource(permissionStatus.titleRes),
                 style = MaterialTheme.typography.headlineSmall,
                 fontWeight = FontWeight.Bold,
                 textAlign = TextAlign.Center,
@@ -117,16 +101,7 @@ private fun LocationPermissionContent(
             Spacer(modifier = Modifier.height(16.dp))
 
             Text(
-                text = when (permissionStatus) {
-                    PermissionStatus.DENIED_ALWAYS ->
-                        stringResource(Res.string.location_permission_denied_always_description)
-                    PermissionStatus.LOW_ACCURACY ->
-                        stringResource(Res.string.location_permission_low_accuracy_description)
-                    PermissionStatus.DENIED ->
-                        stringResource(Res.string.location_permission_denied_description)
-                    else ->
-                        stringResource(Res.string.location_permission_description)
-                },
+                text = stringResource(permissionStatus.descriptionRes),
                 style = MaterialTheme.typography.bodyLarge,
                 textAlign = TextAlign.Center,
                 color = MaterialTheme.colorScheme.onSurface,
@@ -147,11 +122,7 @@ private fun LocationPermissionContent(
                 ),
             ) {
                 Text(
-                    text = if (permissionStatus == PermissionStatus.DENIED_ALWAYS) {
-                        stringResource(Res.string.location_permission_settings_button)
-                    } else {
-                        stringResource(Res.string.location_permission_button)
-                    },
+                    text = stringResource(permissionStatus.buttonTextRes),
                     style = MaterialTheme.typography.titleMedium,
                 )
             }
@@ -164,71 +135,89 @@ private fun LocationPermissionIllustration(
     permissionStatus: PermissionStatus,
     modifier: Modifier = Modifier,
 ) {
-    var isStarted by remember {
-        mutableStateOf(false)
-    }
+    var isStarted by remember { mutableStateOf(false) }
+    var showGrayPin by remember { mutableStateOf(false) }
+    var showCross by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
-        delay(300)
+        delay(ANIMATION_START_DELAY)
         isStarted = true
     }
 
+    LaunchedEffect(isStarted, permissionStatus) {
+        if (isStarted && permissionStatus == PermissionStatus.DENIED_ALWAYS) {
+            delay(400)
+            showGrayPin = true
+            delay(300)
+            showCross = true
+        } else {
+            showGrayPin = false
+            showCross = false
+        }
+    }
+
+    val springSpec = spring<Float>(
+        dampingRatio = Spring.DampingRatioMediumBouncy,
+        stiffness = Spring.StiffnessLow,
+    )
+
+    val pinScale by animateFloatAsState(
+        targetValue = if (isStarted) 1f else 0f,
+        animationSpec = springSpec,
+    )
+
+    val pinColor by animateColorAsState(
+        targetValue = if (showGrayPin) MaterialTheme.colorScheme.outline else MaterialTheme.colorScheme.primary,
+        animationSpec = tween(durationMillis = 500)
+    )
+
+    val crossScale by animateFloatAsState(
+        targetValue = if (showCross) 1f else 0f,
+        animationSpec = springSpec,
+    )
+
+    val backgroundColor = MaterialTheme.colorScheme.outlineVariant
+
     Box(
-        modifier = modifier.size(200.dp),
+        modifier = modifier
+            .size(200.dp)
+            .drawBehind {
+                drawCircle(color = backgroundColor)
+            },
         contentAlignment = Alignment.Center,
     ) {
-        Box(
-            modifier = Modifier
-                .size(200.dp)
-                .clip(CircleShape)
-                .background(MaterialTheme.colorScheme.outlineVariant),
-        )
-
-        if (isStarted && permissionStatus != PermissionStatus.DENIED_ALWAYS) {
-            PulseCircle(
-                modifier = Modifier.size(120.dp),
-            )
+        if (isStarted && !showGrayPin && permissionStatus != PermissionStatus.DENIED_ALWAYS) {
+            PulseCircle(modifier = Modifier.size(120.dp))
         }
 
         LocationPin(
-            isVisible = isStarted,
-            modifier = Modifier.size(48.dp),
-            color = if (permissionStatus == PermissionStatus.DENIED_ALWAYS) {
-                MaterialTheme.colorScheme.outline
-            } else {
-                MaterialTheme.colorScheme.primary
-            }
+            color = pinColor,
+            modifier = Modifier
+                .size(48.dp)
+                .graphicsLayer {
+                    scaleX = pinScale
+                    scaleY = pinScale
+                }
         )
 
         DeniedCross(
-            isVisible = isStarted && permissionStatus == PermissionStatus.DENIED_ALWAYS,
             modifier = Modifier
                 .size(64.dp)
                 .align(Alignment.Center)
+                .graphicsLayer {
+                    scaleX = crossScale
+                    scaleY = crossScale
+                }
         )
     }
 }
 
 @Composable
 private fun DeniedCross(
-    isVisible: Boolean,
     modifier: Modifier = Modifier
 ) {
-    val scale by animateFloatAsState(
-        targetValue = if (isVisible) 1f else 0f,
-        animationSpec = spring(
-            dampingRatio = Spring.DampingRatioMediumBouncy,
-            stiffness = Spring.StiffnessLow,
-        ),
-    )
-
     val errorColor = MaterialTheme.colorScheme.error
-    Canvas(
-        modifier = modifier.graphicsLayer {
-            scaleX = scale
-            scaleY = scale
-        }
-    ) {
+    Canvas(modifier = modifier) {
         val strokeWidth = 8.dp.toPx()
         drawLine(
             color = errorColor,
@@ -271,51 +260,33 @@ private fun PulseCircle(
         ),
     )
 
+    val pulseColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.4f)
     Box(
-        modifier = modifier
-            .graphicsLayer {
-                scaleX = scale
-                scaleY = scale
-                this.alpha = alpha
-            }
-            .background(
-                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.4f),
-                shape = CircleShape,
-            ),
+        modifier = modifier.drawBehind {
+            drawCircle(
+                color = pulseColor,
+                radius = (size.minDimension / 2) * scale,
+                alpha = alpha
+            )
+        }
     )
 }
 
 @Composable
 private fun LocationPin(
-    isVisible: Boolean,
     modifier: Modifier = Modifier,
     color: Color = MaterialTheme.colorScheme.primary
 ) {
-    val scale by animateFloatAsState(
-        targetValue = if (isVisible) 1f else 0f,
-        animationSpec = spring(
-            dampingRatio = Spring.DampingRatioMediumBouncy,
-            stiffness = Spring.StiffnessLow,
-        ),
-    )
-
     Box(
         modifier = modifier
-            .graphicsLayer {
-                scaleX = scale
-                scaleY = scale
+            .drawBehind {
+                drawCircle(color = color)
+                drawCircle(
+                    color = Color.White,
+                    radius = 9.dp.toPx()
+                )
             }
-            .clip(CircleShape)
-            .background(color),
-        contentAlignment = Alignment.Center,
-    ) {
-        Box(
-            modifier = Modifier
-                .size(18.dp)
-                .clip(CircleShape)
-                .background(Color.White),
-        )
-    }
+    )
 }
 
 @ThemePreviews
