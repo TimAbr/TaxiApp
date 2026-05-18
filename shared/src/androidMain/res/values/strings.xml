@@ -3,4 +3,5 @@
     <string name="location_tracking_channel_name">Location Tracking</string>
     <string name="location_notification_title">Taxi App</string>
     <string name="location_notification_text">Active background tracking is enabled</string>
+    <string name="location_notification_content">Lat: %.5f, Lon: %.5f</string>
 </resources>
