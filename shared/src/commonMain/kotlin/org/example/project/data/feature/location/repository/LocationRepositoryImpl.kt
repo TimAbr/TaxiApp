@@ -20,8 +20,8 @@ class LocationRepositoryImpl(
         return locationDataSource.observeLocationUpdates()
     }
 
-    override fun startBackgroundTracking() {
-        locationDataSource.startBackgroundTracking()
+    override fun startBackgroundTracking(): Outcome<Unit, LocationError> {
+        return locationDataSource.startBackgroundTracking()
     }
 
     override fun stopBackgroundTracking() {

@@ -15,7 +15,9 @@ class StubLocationDataSource : LocationDataSource {
         emit(Outcome.Error(LocationError.SERVICE_UNAVAILABLE))
     }
 
-    override fun startBackgroundTracking() {}
+    override fun startBackgroundTracking(): Outcome<Unit, LocationError> {
+        return Outcome.Error(LocationError.SERVICE_UNAVAILABLE)
+    }
 
     override fun stopBackgroundTracking() {}
 }

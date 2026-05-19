@@ -2,11 +2,9 @@ package org.example.project.feature.location
 
 import android.Manifest
 import android.content.Intent
-import android.content.pm.PackageManager
 import android.net.Uri
 import android.provider.Settings
-import androidx.core.app.ActivityCompat
-import androidx.core.content.ContextCompat
+import org.example.project.data.feature.location.utils.checkLocationPermissionStatus
 import org.example.project.domain.feature.location.models.PermissionStatus
 import org.example.project.domain.feature.location.providers.PermissionManager
 
@@ -17,26 +15,7 @@ class AndroidPermissionManager(
 
     override suspend fun checkLocationPermission(): PermissionStatus {
         val activity = delegate.activity ?: return PermissionStatus.NOT_DETERMINED
-
-        val fineGranted = ContextCompat.checkSelfPermission(
-            activity,
-            Manifest.permission.ACCESS_FINE_LOCATION
-        ) == PackageManager.PERMISSION_GRANTED
-
-        val coarseGranted = ContextCompat.checkSelfPermission(
-            activity,
-            Manifest.permission.ACCESS_COARSE_LOCATION
-        ) == PackageManager.PERMISSION_GRANTED
-
-        return when {
-            fineGranted -> PermissionStatus.GRANTED
-            coarseGranted -> PermissionStatus.LOW_ACCURACY
-            ActivityCompat.shouldShowRequestPermissionRationale(
-                activity,
-                Manifest.permission.ACCESS_FINE_LOCATION
-            ) -> PermissionStatus.DENIED
-            else -> PermissionStatus.NOT_DETERMINED
-        }
+        return activity.checkLocationPermissionStatus()
     }
 
     override fun openSettings() {
@@ -63,11 +42,9 @@ class AndroidPermissionManager(
         return when {
             fineGranted -> PermissionStatus.GRANTED
             coarseGranted -> PermissionStatus.LOW_ACCURACY
-            ActivityCompat.shouldShowRequestPermissionRationale(
-                activity,
-                Manifest.permission.ACCESS_FINE_LOCATION
-            ) -> PermissionStatus.DENIED
-            else -> PermissionStatus.DENIED_ALWAYS
+            else -> activity.checkLocationPermissionStatus().let { 
+                if (it == PermissionStatus.DENIED) PermissionStatus.DENIED else PermissionStatus.DENIED_ALWAYS
+            }
         }
     }
 

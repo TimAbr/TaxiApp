@@ -10,6 +10,7 @@ import org.example.project.data.feature.auth.datasources.auth.google.GoogleIdPro
 import org.example.project.data.feature.auth.datasources.auth.remote.SERVER_PORT
 import org.example.project.data.feature.location.datasources.AndroidLocationDataSource
 import org.example.project.data.feature.location.datasources.LocationDataSource
+import org.example.project.data.feature.location.utils.BackgroundTrackingManager
 import org.koin.core.module.Module
 import org.koin.core.qualifier.named
 import org.koin.dsl.bind
@@ -39,10 +40,12 @@ actual val platformDataModule: Module = module {
         "http://10.0.2.2:$SERVER_PORT"
     }
 
-
+    single {
+        BackgroundTrackingManager(get())
+    }
 
     single {
-        AndroidLocationDataSource(get())
+        AndroidLocationDataSource(get(), get())
     }
 
     single <LocationDataSource>{

@@ -7,7 +7,7 @@ import org.example.project.utils.models.Outcome
 interface LocationRepository {
     suspend fun getCurrentLocation(): Outcome<LocationCoordinates, LocationError>
     fun observeLocationUpdates(): Flow<Outcome<LocationCoordinates, LocationError>>
-    fun startBackgroundTracking()
+    fun startBackgroundTracking(): Outcome<Unit, LocationError>
     fun stopBackgroundTracking()
 }
 

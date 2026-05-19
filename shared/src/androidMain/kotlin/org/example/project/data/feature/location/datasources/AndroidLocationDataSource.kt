@@ -5,7 +5,6 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
-import android.content.pm.PackageManager
 import android.location.Location
 import android.location.LocationManager
 import android.os.Looper
@@ -35,18 +34,20 @@ import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.shareIn
-import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withTimeout
-import org.example.project.data.feature.location.service.LocationService
+import org.example.project.data.feature.location.utils.BackgroundTrackingManager
+import org.example.project.data.feature.location.utils.checkLocationPermissionStatus
 import org.example.project.domain.feature.location.models.LocationCoordinates
+import org.example.project.domain.feature.location.models.PermissionStatus
 import org.example.project.domain.feature.location.repository.LocationError
 import org.example.project.utils.models.Outcome
 import kotlin.coroutines.resume
 
 class AndroidLocationDataSource(
     private val context: Context,
+    private val trackingManager: BackgroundTrackingManager,
 ) : LocationDataSource {
 
     private val dataSourceScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
@@ -70,14 +71,19 @@ class AndroidLocationDataSource(
         return sharedLocationFlow
     }
 
-    override fun startBackgroundTracking() {
-        val intent = Intent(context, LocationService::class.java)
-        ContextCompat.startForegroundService(context, intent)
+    override fun startBackgroundTracking(): Outcome<Unit, LocationError> {
+        trackingManager.start()
+
+        val status = context.checkLocationPermissionStatus()
+        return if (status == PermissionStatus.GRANTED) {
+            Outcome.Success(Unit)
+        } else {
+            Outcome.Error(LocationError.NO_PERMISSION)
+        }
     }
 
     override fun stopBackgroundTracking() {
-        val intent = Intent(context, LocationService::class.java)
-        context.stopService(intent)
+        trackingManager.stop()
     }
 
     @OptIn(ExperimentalCoroutinesApi::class)
@@ -114,16 +120,9 @@ class AndroidLocationDataSource(
             locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER)
     }
 
-    private fun hasPermission(): Boolean {
-        return ContextCompat.checkSelfPermission(
-            context,
-            android.Manifest.permission.ACCESS_FINE_LOCATION,
-        ) == PackageManager.PERMISSION_GRANTED
-    }
-
     @SuppressLint("MissingPermission")
     override suspend fun getCurrentLocation(): Outcome<LocationCoordinates, LocationError> {
-        if (!hasPermission()) return Outcome.Error(LocationError.NO_PERMISSION)
+        if (!isLocationPermissionGranted()) return Outcome.Error(LocationError.NO_PERMISSION)
         if (!isGpsEnabled()) return Outcome.Error(LocationError.GPS_DISABLED)
 
         return try {
@@ -195,7 +194,7 @@ class AndroidLocationDataSource(
 
     @SuppressLint("MissingPermission")
     private fun rawLocationFlow(): Flow<LocationCoordinates> = callbackFlow {
-        if (!hasPermission()) {
+        if (!isLocationPermissionGranted()) {
             throw SecurityException("Location permission missing")
         }
 
@@ -246,11 +245,15 @@ class AndroidLocationDataSource(
     private fun getStatusError(): LocationError? {
         val gmsAvailability = GoogleApiAvailability.getInstance().isGooglePlayServicesAvailable(context)
         return when {
-            !hasPermission() -> LocationError.NO_PERMISSION
+            !isLocationPermissionGranted() -> LocationError.NO_PERMISSION
             !isGpsEnabled() -> LocationError.GPS_DISABLED
             gmsAvailability != ConnectionResult.SUCCESS -> LocationError.SERVICE_UNAVAILABLE
             else -> null
         }
+    }
+
+    private fun isLocationPermissionGranted(): Boolean {
+        return context.checkLocationPermissionStatus() == PermissionStatus.GRANTED
     }
 
     private fun Location.toCoordinates() = LocationCoordinates(lat = latitude, lon = longitude)
