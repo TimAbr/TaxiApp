@@ -8,14 +8,15 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import org.example.project.presentation.auth.AuthScreen
 import org.example.project.presentation.auth.AuthViewModel
-import org.example.project.presentation.main.MainEvent
+import org.example.project.presentation.location.permission.LocationPermissionScreen
+import org.example.project.presentation.location.permission.LocationPermissionViewModel
 import org.example.project.presentation.main.MainScreen
 import org.example.project.presentation.main.MainViewModel
 import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
 fun NavGraph(
-    startDestination: Screen = Screen.Auth,
+    startDestination: Screen = Screen.LocationPermission,
 ) {
     val navController = rememberNavController()
 
@@ -23,6 +24,25 @@ fun NavGraph(
         navController = navController,
         startDestination = startDestination,
     ) {
+        composable<Screen.LocationPermission> {
+            val viewModel: LocationPermissionViewModel = koinViewModel()
+            val permissionStatus by viewModel.permissionStatus.collectAsState()
+
+            LocationPermissionScreen(
+                permissionStatus = permissionStatus,
+                onGrantClick = { viewModel.requestPermission() },
+                onNavigate = {
+                    if (!navController.popBackStack()) {
+                        navController.navigate(Screen.Auth) {
+                            popUpTo(Screen.LocationPermission) {
+                                inclusive = true
+                            }
+                        }
+                    }
+                },
+            )
+        }
+
         composable<Screen.Auth> {
             val viewModel: AuthViewModel = koinViewModel()
             val state by viewModel.state.collectAsState()
@@ -33,11 +53,14 @@ fun NavGraph(
                 onClearError = { viewModel.clearError() },
                 onNavigateToMain = {
                     navController.navigate(Screen.Main) {
-                        popUpTo(Screen.Auth) { inclusive = true }
+                        popUpTo(Screen.Auth) {
+                            inclusive = true
+                        }
                     }
                 },
             )
         }
+
         composable<Screen.Main> {
             val viewModel: MainViewModel = koinViewModel()
             val state by viewModel.state.collectAsState()
@@ -47,8 +70,13 @@ fun NavGraph(
                 events = viewModel.events,
                 onLogoutSuccess = {
                     navController.navigate(Screen.Auth) {
-                        popUpTo(Screen.Main) { inclusive = true }
+                        popUpTo(Screen.Main) {
+                            inclusive = true
+                        }
                     }
+                },
+                onPermissionDenied = {
+                    navController.navigate(Screen.LocationPermission)
                 },
                 onLogoutRequest = { viewModel.showLogoutConfirmation() },
                 onLogoutConfirm = { viewModel.logout() },

@@ -36,11 +36,14 @@ kotlin {
             implementation(libs.kotlin.test)
         }
         androidMain.dependencies {
+            implementation(libs.androidx.core.ktx)
             implementation(libs.androidx.security.crypto)
             implementation(libs.androidx.credentials)
             implementation(libs.androidx.credentials.play.services.auth)
             implementation(libs.googleid)
             implementation(libs.koin.android)
+            implementation(libs.play.services.location)
+            implementation(libs.androidx.lifecycle.process)
         }
 
         jvmMain.dependencies {

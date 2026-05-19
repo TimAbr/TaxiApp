@@ -39,11 +39,6 @@ import taxiapp.composeapp.generated.resources.auth_google_button
 import taxiapp.composeapp.generated.resources.auth_title
 import taxiapp.composeapp.generated.resources.google_logo
 import taxiapp.composeapp.generated.resources.auth_error
-import taxiapp.composeapp.generated.resources.error_network
-import taxiapp.composeapp.generated.resources.error_server
-import taxiapp.composeapp.generated.resources.error_canceled
-import taxiapp.composeapp.generated.resources.error_no_credentials
-import taxiapp.composeapp.generated.resources.error_unknown
 import taxiapp.composeapp.generated.resources.google_logo_content_description
 import taxiapp.composeapp.generated.resources.ok_button
 
@@ -69,6 +64,7 @@ fun AuthScreen(
                     onLoginClick = {},
                 )
             }
+
             is AuthScreenState.LogIn -> {
                 AuthContent(
                     modifier = Modifier.padding(padding),
@@ -76,19 +72,21 @@ fun AuthScreen(
                     onLoginClick = onLoginClick,
                 )
             }
+
             is AuthScreenState.Error -> {
                 AuthContent(
                     modifier = Modifier.padding(padding),
                     isLoading = false,
                     onLoginClick = onLoginClick,
                 )
+
                 AuthErrorDialog(
                     error = state.error,
                     onDismiss = onClearError,
                 )
             }
-            is AuthScreenState.Authorized -> {
-            }
+
+            is AuthScreenState.Authorized -> {}
         }
     }
 }
@@ -189,21 +187,6 @@ private fun AuthErrorDialog(
         },
         containerColor = MaterialTheme.colorScheme.surface,
     )
-}
-
-@Composable
-private fun AuthLoginError.toErrorMessage(): String = when (this) {
-    is AuthLoginError.NetworkError ->
-        stringResource(Res.string.error_network)
-    is AuthLoginError.GoogleAuthError.NoCredentials ->
-        stringResource(Res.string.error_no_credentials)
-    is AuthLoginError.ServerError ->
-        stringResource(Res.string.error_server)
-    is AuthLoginError.Canceled ->
-        stringResource(Res.string.error_canceled)
-    is AuthLoginError.GoogleAuthError.Cancelled ->
-        stringResource(Res.string.error_canceled)
-    else -> stringResource(Res.string.error_unknown)
 }
 
 @Preview

@@ -4,7 +4,7 @@ import androidx.compose.ui.graphics.Color
 
 val GreenMain = Color(0xFF7EAB3A)
 val RedMain = Color(0xFFEB001B)
-val DarkGrey = Color(0xFF212121)
+val DarkGrey = Color(62, 73, 88)
 val LightGrey = Color(0xFF97ADB6)
 val BlueGreyLight = Color(0xFFD5DDE0)
 
@@ -23,7 +23,8 @@ val DarkOnPrimary = Color.Black
 val DarkBackground = Color(0xFF121212)
 val DarkOnBackground = Color(0xFFE0E0E0)
 val DarkOnSurface = Color(0xFFE0E0E0)
-val DarkOnSurfaceVariant = LightGrey
-val DarkOutlineVariant = LightGrey
+val DarkSurfaceVariant = Color(0xFF1E1E1E)
+val DarkOnSurfaceVariant = Color(0xFFA7ABAC)
+val DarkOutlineVariant = Color(0xFF37393A)
 val DarkError = RedMain
 val DarkOnError = Color.White

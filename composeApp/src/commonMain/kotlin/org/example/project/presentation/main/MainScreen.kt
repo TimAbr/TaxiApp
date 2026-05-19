@@ -17,11 +17,15 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ElevatedButton
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SheetState
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.material3.ripple
@@ -32,27 +36,35 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.emptyFlow
+import org.example.project.domain.feature.location.models.LocationCoordinates
+import org.example.project.domain.feature.location.repository.LocationError
 import org.example.project.presentation.theme.TaxiAppTheme
+import org.example.project.utils.annotations.preview.ThemePreviews
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
 import taxiapp.composeapp.generated.resources.Res
 import taxiapp.composeapp.generated.resources.cancel_button
+import taxiapp.composeapp.generated.resources.current_location_title
+import taxiapp.composeapp.generated.resources.finding_location
 import taxiapp.composeapp.generated.resources.google_logo
+import taxiapp.composeapp.generated.resources.lat_label
 import taxiapp.composeapp.generated.resources.logout_button
 import taxiapp.composeapp.generated.resources.logout_confirm_message
 import taxiapp.composeapp.generated.resources.logout_confirm_title
-import taxiapp.composeapp.generated.resources.main_screen_placeholder
+import taxiapp.composeapp.generated.resources.lon_label
+import taxiapp.composeapp.generated.resources.logout_content_description
 
 @Composable
 fun MainScreen(
     state: MainScreenState,
     events: Flow<MainEvent>,
     onLogoutSuccess: () -> Unit,
+    onPermissionDenied: () -> Unit,
     onLogoutRequest: () -> Unit,
     onLogoutConfirm: () -> Unit,
     onLogoutDismiss: () -> Unit,
@@ -65,24 +77,40 @@ fun MainScreen(
         }
     }
 
+    LaunchedEffect(state.locationError) {
+        if (state.locationError == LocationError.NO_PERMISSION) {
+            onPermissionDenied()
+        }
+    }
+
     Scaffold { padding ->
         Box(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding),
         ) {
-            Text(
-                text = stringResource(Res.string.main_screen_placeholder),
-                modifier = Modifier.align(Alignment.Center),
-                style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
+            Column(
+                modifier = Modifier
+                    .align(Alignment.Center)
+                    .padding(horizontal = 16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                LocationCard(
+                    location = state.location,
+                )
+
+                if (state.locationError != null) {
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    ErrorMessage(error = state.locationError)
+                }
+            }
 
             Box(
                 modifier = Modifier
                     .align(Alignment.TopStart)
                     .padding(16.dp)
-                    .size(48.dp)
+                    .size(50.dp)
                     .clip(CircleShape)
                     .background(MaterialTheme.colorScheme.surface)
                     .clickable(
@@ -95,8 +123,8 @@ fun MainScreen(
             ) {
                 Image(
                     painter = painterResource(Res.drawable.google_logo),
-                    contentDescription = stringResource(Res.string.logout_button),
-                    modifier = Modifier.size(32.dp),
+                    contentDescription = stringResource(Res.string.logout_content_description),
+                    modifier = Modifier.size(40.dp),
                     colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.outlineVariant),
                 )
             }
@@ -108,6 +136,105 @@ fun MainScreen(
             onDismiss = onLogoutDismiss,
         )
     }
+}
+
+@Composable
+private fun LocationCard(
+    location: Location,
+    modifier: Modifier = Modifier,
+) {
+    Card(
+        modifier = modifier
+            .fillMaxWidth(),
+        shape = MaterialTheme.shapes.medium,
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.outlineVariant,
+        ),
+    ) {
+        Column(
+            modifier = Modifier
+                .padding(16.dp)
+                .fillMaxWidth(),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center,
+        ) {
+            if (location is Location.Precise) {
+                Text(
+                    text = stringResource(Res.string.current_location_title),
+                    style = MaterialTheme.typography.headlineMedium,
+                    color = MaterialTheme.colorScheme.primary,
+                    textAlign = TextAlign.Center,
+                )
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                CoordinateItem(
+                    label = stringResource(Res.string.lat_label),
+                    value = location.coordinates.lat,
+                )
+
+                CoordinateItem(
+                    label = stringResource(Res.string.lon_label),
+                    value = location.coordinates.lon,
+                )
+            } else {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(32.dp),
+                    color = MaterialTheme.colorScheme.primary,
+                    strokeWidth = 3.dp,
+                )
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                Text(
+                    text = stringResource(Res.string.finding_location),
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    textAlign = TextAlign.Center,
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun CoordinateItem(
+    label: String,
+    value: Double,
+    modifier: Modifier = Modifier,
+) {
+    Column(
+        modifier = modifier,
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+        )
+
+        Text(
+            text = value.toString(),
+            style = MaterialTheme.typography.titleLarge.copy(
+                fontFamily = FontFamily.Monospace,
+            ),
+            color = MaterialTheme.colorScheme.onSurface,
+        )
+    }
+}
+
+@Composable
+private fun ErrorMessage(
+    error: LocationError,
+    modifier: Modifier = Modifier,
+) {
+    Text(
+        text = error.toErrorMessage(),
+        color = MaterialTheme.colorScheme.error,
+        textAlign = TextAlign.Center,
+        style = MaterialTheme.typography.bodyMedium,
+        modifier = modifier.fillMaxWidth(),
+    )
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -204,7 +331,7 @@ private fun LogoutBottomSheet(
     }
 }
 
-@Preview
+@ThemePreviews
 @Composable
 private fun MainScreenPreview() {
     TaxiAppTheme {
@@ -212,6 +339,48 @@ private fun MainScreenPreview() {
             state = MainScreenState(),
             events = emptyFlow(),
             onLogoutSuccess = {},
+            onPermissionDenied = {},
+            onLogoutRequest = {},
+            onLogoutConfirm = {},
+            onLogoutDismiss = {},
+        )
+    }
+}
+
+@ThemePreviews
+@Composable
+private fun PreviewSuccess() {
+    TaxiAppTheme {
+        MainScreen(
+            state = MainScreenState(
+                location = Location.Precise(
+                    coordinates = LocationCoordinates(
+                        lat = 55.755829,
+                        lon = 37.617299,
+                    )
+                )
+            ),
+            events = emptyFlow(),
+            onLogoutSuccess = {},
+            onPermissionDenied = {},
+            onLogoutRequest = {},
+            onLogoutConfirm = {},
+            onLogoutDismiss = {},
+        )
+    }
+}
+
+@ThemePreviews
+@Composable
+private fun PreviewError() {
+    TaxiAppTheme {
+        MainScreen(
+            state = MainScreenState(
+                locationError = LocationError.GPS_DISABLED
+            ),
+            events = emptyFlow(),
+            onLogoutSuccess = {},
+            onPermissionDenied = {},
             onLogoutRequest = {},
             onLogoutConfirm = {},
             onLogoutDismiss = {},

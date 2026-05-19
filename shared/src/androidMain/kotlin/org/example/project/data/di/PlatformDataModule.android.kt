@@ -8,6 +8,10 @@ import com.russhwolf.settings.SharedPreferencesSettings
 import org.example.project.data.feature.auth.datasources.auth.google.AndroidGoogleIdProvider
 import org.example.project.data.feature.auth.datasources.auth.google.GoogleIdProvider
 import org.example.project.data.feature.auth.datasources.auth.remote.SERVER_PORT
+import org.example.project.data.feature.location.datasources.AndroidLocationDataSource
+import org.example.project.data.feature.location.datasources.LocationDataSource
+import org.example.project.data.feature.location.providers.AndroidPermissionStatusProvider
+import org.example.project.data.feature.location.utils.BackgroundTrackingManager
 import org.koin.core.module.Module
 import org.koin.core.qualifier.named
 import org.koin.dsl.bind
@@ -36,4 +40,21 @@ actual val platformDataModule: Module = module {
     single(named("BASE_URL")) {
         "http://10.0.2.2:$SERVER_PORT"
     }
+
+    single {
+        BackgroundTrackingManager(get())
+    }
+
+    single {
+        AndroidPermissionStatusProvider(get())
+    }
+
+    single {
+        AndroidLocationDataSource(get(), get(), get())
+    }
+
+    single <LocationDataSource>{
+        get<AndroidLocationDataSource>()
+    }
+
 }
