@@ -47,7 +47,7 @@ class BackgroundTrackingManager(private val context: Context) {
 
     companion object {
         private const val TAG = "BackgroundTrackingMgr"
-        private const val PREFS_NAME = "location_tracking_prefs"
-        private const val KEY_TRACKING_ENABLED = "background_tracking_enabled"
+        const val PREFS_NAME = "location_tracking_prefs"
+        const val KEY_TRACKING_ENABLED = "background_tracking_enabled"
     }
 }

@@ -10,6 +10,7 @@ import org.example.project.data.feature.auth.datasources.auth.google.GoogleIdPro
 import org.example.project.data.feature.auth.datasources.auth.remote.SERVER_PORT
 import org.example.project.data.feature.location.datasources.AndroidLocationDataSource
 import org.example.project.data.feature.location.datasources.LocationDataSource
+import org.example.project.data.feature.location.providers.AndroidPermissionStatusProvider
 import org.example.project.data.feature.location.utils.BackgroundTrackingManager
 import org.koin.core.module.Module
 import org.koin.core.qualifier.named
@@ -45,7 +46,11 @@ actual val platformDataModule: Module = module {
     }
 
     single {
-        AndroidLocationDataSource(get(), get())
+        AndroidPermissionStatusProvider(get())
+    }
+
+    single {
+        AndroidLocationDataSource(get(), get(), get())
     }
 
     single <LocationDataSource>{

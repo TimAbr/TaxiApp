@@ -33,14 +33,18 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.merge
 import kotlinx.coroutines.flow.shareIn
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withTimeout
+import org.example.project.data.feature.location.service.LocationService
 import org.example.project.data.feature.location.utils.BackgroundTrackingManager
 import org.example.project.data.feature.location.utils.checkLocationPermissionStatus
 import org.example.project.domain.feature.location.models.LocationCoordinates
 import org.example.project.domain.feature.location.models.PermissionStatus
+import org.example.project.domain.feature.location.providers.PermissionStatusProvider
 import org.example.project.domain.feature.location.repository.LocationError
 import org.example.project.utils.models.Outcome
 import kotlin.coroutines.resume
@@ -48,6 +52,7 @@ import kotlin.coroutines.resume
 class AndroidLocationDataSource(
     private val context: Context,
     private val trackingManager: BackgroundTrackingManager,
+    private val permissionStatusProvider: PermissionStatusProvider,
 ) : LocationDataSource {
 
     private val dataSourceScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
@@ -73,6 +78,7 @@ class AndroidLocationDataSource(
 
     override fun startBackgroundTracking(): Outcome<Unit, LocationError> {
         trackingManager.start()
+        permissionStatusProvider.updateStatus()
 
         val status = context.checkLocationPermissionStatus()
         return if (status == PermissionStatus.GRANTED) {
@@ -177,19 +183,25 @@ class AndroidLocationDataSource(
         continuation.invokeOnCancellation { fusedLocationClient.removeLocationUpdates(callback) }
     }
 
-    private fun providerStatusFlow(): Flow<Unit> = callbackFlow {
-        val receiver = object : BroadcastReceiver() {
-            override fun onReceive(context: Context?, intent: Intent?) {
-                trySend(Unit)
+    private fun providerStatusFlow(): Flow<Unit> {
+        val systemProvidersFlow = callbackFlow {
+            val receiver = object : BroadcastReceiver() {
+                override fun onReceive(context: Context?, intent: Intent?) {
+                    trySend(Unit)
+                }
+            }
+            val filter = IntentFilter(LocationManager.PROVIDERS_CHANGED_ACTION)
+            ContextCompat.registerReceiver(context, receiver, filter, ContextCompat.RECEIVER_NOT_EXPORTED)
+            
+            trySend(Unit)
+            awaitClose { 
+                context.unregisterReceiver(receiver)
             }
         }
-        val filter = IntentFilter(LocationManager.PROVIDERS_CHANGED_ACTION)
-        ContextCompat.registerReceiver(context, receiver, filter, ContextCompat.RECEIVER_NOT_EXPORTED)
-        
-        trySend(Unit)
-        awaitClose { 
-            context.unregisterReceiver(receiver)
-        }
+
+        val permissionsFlow = permissionStatusProvider.permissionStatusFlow.map { Unit }
+
+        return merge(systemProvidersFlow, permissionsFlow)
     }
 
     @SuppressLint("MissingPermission")

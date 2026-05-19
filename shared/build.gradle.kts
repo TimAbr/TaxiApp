@@ -43,6 +43,7 @@ kotlin {
             implementation(libs.googleid)
             implementation(libs.koin.android)
             implementation(libs.play.services.location)
+            implementation(libs.androidx.lifecycle.process)
         }
 
         jvmMain.dependencies {

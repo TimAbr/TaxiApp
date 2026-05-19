@@ -17,7 +17,7 @@ actual val platformAppModule: Module = module {
     }
 
     single {
-        AndroidPermissionManager(get(), get())
+        AndroidPermissionManager(get(), get(), get())
     }
 
     single <PermissionManager> {

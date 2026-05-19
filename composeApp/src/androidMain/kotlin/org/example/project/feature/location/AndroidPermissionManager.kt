@@ -4,18 +4,20 @@ import android.Manifest
 import android.content.Intent
 import android.net.Uri
 import android.provider.Settings
+import kotlinx.coroutines.flow.first
 import org.example.project.data.feature.location.utils.checkLocationPermissionStatus
 import org.example.project.domain.feature.location.models.PermissionStatus
 import org.example.project.domain.feature.location.providers.PermissionManager
+import org.example.project.domain.feature.location.providers.PermissionStatusProvider
 
 class AndroidPermissionManager(
     private val delegate: PermissionLifecycleDelegate,
-    private val requester: LocationPermissionRequester
+    private val requester: LocationPermissionRequester,
+    private val permissionStatusProvider: PermissionStatusProvider,
 ) : PermissionManager, LifecycleBinder by delegate {
 
     override suspend fun checkLocationPermission(): PermissionStatus {
-        val activity = delegate.activity ?: return PermissionStatus.NOT_DETERMINED
-        return activity.checkLocationPermissionStatus()
+        return permissionStatusProvider.permissionStatusFlow.first()
     }
 
     override fun openSettings() {
@@ -39,13 +41,16 @@ class AndroidPermissionManager(
 
         val activity = delegate.activity ?: return PermissionStatus.CANCELED
 
-        return when {
+        val finalStatus = when {
             fineGranted -> PermissionStatus.GRANTED
             coarseGranted -> PermissionStatus.LOW_ACCURACY
             else -> activity.checkLocationPermissionStatus().let { 
                 if (it == PermissionStatus.DENIED) PermissionStatus.DENIED else PermissionStatus.DENIED_ALWAYS
             }
         }
+        
+        permissionStatusProvider.updateStatus()
+        return finalStatus
     }
 
     companion object {
