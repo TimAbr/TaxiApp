@@ -1,0 +1,17 @@
+<resources>
+    <string name="auth_title">Вход</string>
+    <string name="auth_google_button">Войти с помощью Google</string>
+    <string name="main_screen_placeholder">Главный экран (Заглушка)</string>
+    <string name="auth_error">Произошла ошибка при входе</string>
+    <string name="error_network">Проверьте соединение с интернетом или запущен ли сервер</string>
+    <string name="error_no_credentials">На устройстве не найдены аккаунты Google или вход невозможен</string>
+    <string name="error_server">Ошибка сервера, попробуйте позже</string>
+    <string name="error_canceled">Вход отменен</string>
+    <string name="error_unknown">Неизвестная ошибка</string>
+    <string name="logout_confirm_title">Выход из аккаунта</string>
+    <string name="logout_confirm_message">Вы точно хотите выйти из аккаунта?</string>
+    <string name="logout_button">Выйти</string>
+    <string name="cancel_button">Отмена</string>
+    <string name="ok_button">OK</string>
+    <string name="google_logo_content_description">Логотип Google</string>
+</resources>
